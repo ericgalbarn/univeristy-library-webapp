@@ -2,6 +2,7 @@ import { db } from "@/db/db";
 import { users } from "@/db/schema";
 import { sendEmail } from "@/lib/workflow";
 import { serve } from "@upstash/workflow/nextjs";
+import { eq } from "drizzle-orm";
 
 type UserState = "non-active" | "active";
 type InitialData = {
