@@ -15,7 +15,7 @@ export const signInSchema = z.object({
 
 export const bookSchema = z.object({
   title: z.string().trim().min(2).max(100),
-  description: z.string().trim().min(10).max(100),
+  description: z.string().trim().min(10).max(200),
   author: z.string().trim().min(2).max(100),
   genre: z.string().trim().min(2).max(50),
   rating: z.coerce.number().min(1).max(5),

@@ -19,6 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import ColorPicker from "../ColorPicker";
+import { createBook } from "@/lib/admin/actions/book";
+import { toast } from "@/hooks/use-toast";
 
 interface Props extends Partial<Book> {
   type?: "create" | "update";
@@ -44,7 +46,21 @@ const BookForm = ({ type, ...book }: Props) => {
   });
 
   const onSubmit = async (values: z.infer<typeof bookSchema>) => {
-    console.log(values);
+    const result = await createBook(values);
+    if (result.success) {
+      toast({
+        title: "Success",
+        description: "Book created successfully.",
+      });
+
+      router.push(`/admin/books/${result.data.id}`);
+    } else {
+      toast({
+        title: "Error",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -166,7 +182,7 @@ const BookForm = ({ type, ...book }: Props) => {
                 <FileUpload
                   type="image"
                   accept="image/*"
-                  placeholder="Upload a book cover"
+                  placeholder="Upload a book image"
                   folder="books/covers"
                   variant="light"
                   onFileChange={field.onChange}
@@ -227,7 +243,7 @@ const BookForm = ({ type, ...book }: Props) => {
                 <FileUpload
                   type="video"
                   accept="video/*"
-                  placeholder="Upload a book cover"
+                  placeholder="Upload a book trailer"
                   folder="books/videos"
                   variant="light"
                   onFileChange={field.onChange}
