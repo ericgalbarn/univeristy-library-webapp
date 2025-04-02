@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
-import { borrowBooks } from "@/lib/actions/book";
+import { borrowBook } from "@/lib/actions/book";
 
 interface Props {
   userId: string;
@@ -35,7 +35,7 @@ const BorrowBook = ({
     setBorrowing(true);
 
     try {
-      const result = await borrowBooks({ bookId, userId });
+      const result = await borrowBook({ bookId, userId });
 
       if (result.success) {
         toast({

@@ -1,12 +1,13 @@
 "use server";
 
-import { db } from "@/db/db";
-import { books, borrowRecords } from "@/db/schema";
+import { db } from "../../db/db";
+import { books, borrowRecords } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import dayjs from "dayjs";
 
-export const borrowBooks = async (params: BorrowBookParams) => {
+export const borrowBook = async (params: BorrowBookParams) => {
   const { userId, bookId } = params;
+
   try {
     const book = await db
       .select({ availableCopies: books.availableCopies })
@@ -23,7 +24,7 @@ export const borrowBooks = async (params: BorrowBookParams) => {
 
     const dueDate = dayjs().add(7, "day").toDate().toDateString();
 
-    const record = db.insert(borrowRecords).values({
+    const record = await db.insert(borrowRecords).values({
       userId,
       bookId,
       dueDate,
@@ -44,7 +45,7 @@ export const borrowBooks = async (params: BorrowBookParams) => {
 
     return {
       success: false,
-      error: "An error occurred while borrowing the book.",
+      error: "An error occurred while borrowing the book",
     };
   }
 };
