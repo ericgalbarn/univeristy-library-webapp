@@ -2,13 +2,54 @@
 
 import { db } from "@/db/db";
 import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, asc, desc, eq, like, gte, lte, SQL, or } from "drizzle-orm";
 import { z } from "zod";
-import { userUpdateSchema } from "./schema";
+import { userFiltersSchema, userUpdateSchema } from "./schema";
 
-export async function getAllUsers() {
+export async function getAllUsers(filters?: z.infer<typeof userFiltersSchema>) {
   try {
-    const allUsers = await db
+    const conditions: SQL[] = [];
+    
+    if (filters) {
+      // Filter by search query (match name or email)
+      if (filters.search) {
+        const searchTerm = `%${filters.search}%`;
+        conditions.push(or(
+          like(users.fullName, searchTerm),
+          like(users.email, searchTerm),
+          like(users.universityId.toString(), searchTerm) // Need to convert to string for LIKE
+        ));
+      }
+      
+      // Filter by status
+      if (filters.status) {
+        conditions.push(eq(users.status, filters.status));
+      }
+      
+      // Filter by role
+      if (filters.role) {
+        conditions.push(eq(users.role, filters.role));
+      }
+      
+      // Filter by created date
+      if (filters.createdAfter) {
+        conditions.push(gte(users.createAt, new Date(filters.createdAfter)));
+      }
+      if (filters.createdBefore) {
+        conditions.push(lte(users.createAt, new Date(filters.createdBefore)));
+      }
+      
+      // Filter by last active date
+      if (filters.lastActiveAfter) {
+        conditions.push(gte(users.lastActivityDate, new Date(filters.lastActiveAfter)));
+      }
+      if (filters.lastActiveBefore) {
+        conditions.push(lte(users.lastActivityDate, new Date(filters.lastActiveBefore)));
+      }
+    }
+    
+    // Start building the query
+    let query = db
       .select({
         id: users.id,
         fullName: users.fullName,
@@ -19,8 +60,28 @@ export async function getAllUsers() {
         lastActivityDate: users.lastActivityDate,
         createAt: users.createAt,
       })
-      .from(users)
-      .orderBy(users.createAt);
+      .from(users);
+    
+    // Add conditions if any
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    // Add sorting
+    if (filters?.sortBy) {
+      const column = users[filters.sortBy as keyof typeof users];
+      if (column) {
+        query = query.orderBy(filters.sortOrder === 'desc' ? desc(column) : asc(column));
+      } else {
+        // Default sort by creation date
+        query = query.orderBy(desc(users.createAt));
+      }
+    } else {
+      // Default sort by creation date
+      query = query.orderBy(desc(users.createAt));
+    }
+    
+    const allUsers = await query;
 
     return {
       success: true,
