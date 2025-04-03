@@ -24,10 +24,17 @@ const UsersPage = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<z.infer<typeof userFiltersSchema>>({});
+  const [filters, setFilters] = useState<z.infer<typeof userFiltersSchema>>({
+    sortOrder: "asc",
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [isFiltersDialogOpen, setIsFiltersDialogOpen] = useState(false);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const usersPerPage = 5;
 
   // Define fetchUsers without dependencies to prevent circular dependency
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,6 +83,7 @@ const UsersPage = () => {
   useEffect(() => {
     if (!initialFetchDone.current) {
       initialFetchDone.current = true;
+      // Make sure to use the current filters which now have default values
       fetchUsers(filters);
     }
   }, []);
@@ -116,6 +124,18 @@ const UsersPage = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]); // Only depend on searchQuery
 
+  // Calculate total pages whenever users array changes
+  useEffect(() => {
+    setTotalPages(Math.max(1, Math.ceil(users.length / usersPerPage)));
+    // Reset to page 1 if current page would be out of bounds with new data
+    if (
+      currentPage > Math.ceil(users.length / usersPerPage) &&
+      users.length > 0
+    ) {
+      setCurrentPage(1);
+    }
+  }, [users, currentPage]);
+
   const handleApplyFilters = (
     newFilters: z.infer<typeof userFiltersSchema>
   ) => {
@@ -149,8 +169,13 @@ const UsersPage = () => {
 
     // Use setTimeout to move state updates out of the render cycle
     setTimeout(() => {
-      setFilters({});
-      fetchUsers({});
+      // Set default values for required filters
+      setFilters({
+        sortOrder: "asc",
+      });
+      fetchUsers({
+        sortOrder: "asc",
+      });
     }, 0);
   };
 
@@ -218,6 +243,26 @@ const UsersPage = () => {
             : "Failed to export users list",
         variant: "destructive",
       });
+    }
+  };
+
+  // Get current users for the current page
+  const getCurrentPageUsers = () => {
+    const startIndex = (currentPage - 1) * usersPerPage;
+    const endIndex = startIndex + usersPerPage;
+    return users.slice(startIndex, endIndex);
+  };
+
+  // Pagination handlers
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
     }
   };
 
@@ -365,7 +410,7 @@ const UsersPage = () => {
         ) : error ? (
           <div className="p-6 text-center text-red-500">{error}</div>
         ) : (
-          <UserList users={users} onRefresh={fetchUsers} />
+          <UserList users={getCurrentPageUsers()} onRefresh={fetchUsers} />
         )}
 
         {!loading && !error && users && (
@@ -393,22 +438,30 @@ const UsersPage = () => {
             )}
             <div className="mt-4 flex justify-between text-sm text-gray-500">
               <div>
-                Showing {users.length} {users.length === 1 ? "user" : "users"}
+                Showing{" "}
+                {users.length > 0
+                  ? `${(currentPage - 1) * usersPerPage + 1}-${Math.min(currentPage * usersPerPage, users.length)}`
+                  : "0"}{" "}
+                of {users.length} {users.length === 1 ? "user" : "users"}
                 {activeFiltersCount > 0 && " (filtered)"}
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   className="h-8 border-gray-300 px-3 py-1 text-xs"
-                  disabled
+                  disabled={currentPage === 1}
+                  onClick={handlePreviousPage}
                 >
                   Previous
                 </Button>
-                <span className="text-xs">Page 1 of 1</span>
+                <span className="text-xs">
+                  Page {currentPage} of {totalPages}
+                </span>
                 <Button
                   variant="outline"
                   className="h-8 border-gray-300 px-3 py-1 text-xs"
-                  disabled
+                  disabled={currentPage === totalPages}
+                  onClick={handleNextPage}
                 >
                   Next
                 </Button>
