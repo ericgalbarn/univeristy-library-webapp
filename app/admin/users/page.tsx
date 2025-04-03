@@ -12,7 +12,8 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
-  DialogTitle
+  DialogTitle,
+  DialogClose
 } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 
@@ -205,7 +206,12 @@ const UsersPage = () => {
                   )}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl p-0 sm:max-w-[900px]">
+              <DialogContent 
+                className="max-w-4xl p-0 sm:max-w-[900px]"
+                onInteractOutside={() => setIsFiltersDialogOpen(false)}
+                onEscapeKeyDown={() => setIsFiltersDialogOpen(false)}
+                hideCloseButton={true}
+              >
                 <DialogTitle className="sr-only">Advanced User Filters</DialogTitle>
                 <UserFilters 
                   onFilter={handleApplyFilters} 

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { userFiltersSchema } from "@/lib/admin/actions/user/schema";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
+import { DialogClose } from "@/components/ui/dialog";
 
 interface UserFiltersProps {
   onFilter: (filters: z.infer<typeof userFiltersSchema>) => void;
@@ -43,14 +44,16 @@ const UserFilters = ({ onFilter, onClose, initialFilters }: UserFiltersProps) =>
   };
 
   return (
-    <div className="relative rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
-      <button
-        onClick={onClose}
-        className="absolute right-4 top-4 text-gray-500 hover:text-gray-800"
-      >
-        <X className="h-5 w-5" />
-      </button>
-      
+    <div className="p-6 relative">
+      <DialogClose asChild>
+        <button
+          onClick={onClose}
+          className="absolute right-6 top-6 text-gray-500 hover:text-gray-800"
+        >
+          <X className="h-5 w-5" />
+          <span className="sr-only">Close</span>
+        </button>
+      </DialogClose>
       <h3 className="mb-4 text-lg font-medium">Filter Users</h3>
       
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -227,13 +230,15 @@ const UserFilters = ({ onFilter, onClose, initialFilters }: UserFiltersProps) =>
         >
           Clear Filters
         </Button>
-        <Button
-          type="button"
-          className="bg-primary-admin text-white"
-          onClick={handleApplyFilters}
-        >
-          Apply Filters
-        </Button>
+        <DialogClose asChild>
+          <Button
+            type="button"
+            className="bg-primary-admin text-white"
+            onClick={handleApplyFilters}
+          >
+            Apply Filters
+          </Button>
+        </DialogClose>
       </div>
     </div>
   );
