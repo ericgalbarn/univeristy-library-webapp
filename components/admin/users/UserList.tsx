@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import UserRow from "./UserRow";
 import { ROLE_ENUM, STATUS_ENUM } from "@/db/schema";
@@ -13,9 +15,10 @@ export type UserListItem = {
 
 interface UserListProps {
   users: UserListItem[];
+  onRefresh: () => void;
 }
 
-const UserList = ({ users }: UserListProps) => {
+const UserList = ({ users, onRefresh }: UserListProps) => {
   return (
     <div className="rounded-lg border border-gray-200">
       <div className="grid grid-cols-6 gap-4 border-b border-gray-200 bg-gray-50 p-4 font-medium">
@@ -29,7 +32,11 @@ const UserList = ({ users }: UserListProps) => {
       {users && users.length > 0 ? (
         <div>
           {users.map((user) => (
-            <UserRow key={user.id} user={user} />
+            <UserRow 
+              key={user.id} 
+              user={user} 
+              onUserUpdated={onRefresh}
+            />
           ))}
         </div>
       ) : (

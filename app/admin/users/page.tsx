@@ -1,19 +1,56 @@
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import React from "react";
-import { getAllUsers } from "@/lib/admin/actions/user";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/utils";
-import Image from "next/image";
+"use client";
 
-const Page = async () => {
-  const { success, data: users, error } = await getAllUsers();
-  
+import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { getAllUsers } from "@/lib/admin/actions/user";
+import UserList from "@/components/admin/users/UserList";
+import { toast } from "@/hooks/use-toast";
+
+const UsersPage = () => {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const { success, data, error } = await getAllUsers();
+      
+      if (success && data) {
+        setUsers(data);
+        setError(null);
+      } else {
+        setError(error || "Failed to fetch users");
+        toast({
+          title: "Error",
+          description: error || "Failed to fetch users",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   return (
     <section className="w-full rounded-2xl bg-white p-7">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-semibold">All Users</h2>
         <div className="flex gap-2">
+          <Button className="bg-primary-admin text-white" onClick={fetchUsers} disabled={loading}>
+            {loading ? "Refreshing..." : "Refresh List"}
+          </Button>
           <Button className="bg-primary-admin text-white">Export List</Button>
         </div>
       </div>
@@ -49,98 +86,18 @@ const Page = async () => {
           </Button>
         </div>
 
-        <div className="rounded-lg border border-gray-200">
-          <div className="grid grid-cols-6 gap-4 border-b border-gray-200 bg-gray-50 p-4 font-medium">
-            <div className="col-span-2">Name / Email</div>
-            <div>University ID</div>
-            <div>Status</div>
-            <div>Role</div>
-            <div>Actions</div>
+        {loading ? (
+          <div className="flex items-center justify-center p-10">
+            <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary-admin"></div>
+            <span className="ml-2 text-gray-600">Loading users...</span>
           </div>
+        ) : error ? (
+          <div className="p-6 text-center text-red-500">{error}</div>
+        ) : (
+          <UserList users={users} onRefresh={fetchUsers} />
+        )}
 
-          {success && users && users.length > 0 ? (
-            users.map((user) => (
-              <div
-                key={user.id}
-                className="grid grid-cols-6 gap-4 border-b border-gray-200 p-4 hover:bg-gray-50"
-              >
-                <div className="col-span-2 flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback className="bg-amber-100">
-                      {getInitials(user.fullName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium text-gray-900">{user.fullName}</p>
-                    <p className="text-sm text-gray-500">{user.email}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">{user.universityId}</div>
-                
-                <div className="flex items-center">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      user.status === "APPROVED"
-                        ? "bg-green-100 text-green-800"
-                        : user.status === "REJECTED"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-amber-100 text-amber-800"
-                    }`}
-                  >
-                    {user.status}
-                  </span>
-                </div>
-                
-                <div className="flex items-center">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      user.role === "ADMIN"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Button
-                    className="h-8 w-8 rounded-full bg-transparent p-0 hover:bg-gray-100"
-                    title="Edit User"
-                  >
-                    <Image
-                      src="/icons/admin/edit.svg"
-                      alt="edit"
-                      width={16}
-                      height={16}
-                    />
-                  </Button>
-                  
-                  <Link href={`/admin/users/${user.id}`}>
-                    <Button
-                      className="h-8 w-8 rounded-full bg-transparent p-0 hover:bg-gray-100"
-                      title="View Details"
-                    >
-                      <Image
-                        src="/icons/admin/user.svg"
-                        alt="view"
-                        width={16}
-                        height={16}
-                      />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="p-6 text-center text-gray-500">
-              {error ? `Error: ${error}` : "No users found"}
-            </div>
-          )}
-        </div>
-
-        {success && users && (
+        {!loading && !error && users && (
           <div className="mt-4 flex justify-between text-sm text-gray-500">
             <div>Showing {users.length} of {users.length} users</div>
             <div className="flex items-center gap-2">
@@ -167,4 +124,4 @@ const Page = async () => {
   );
 };
 
-export default Page;
+export default UsersPage;

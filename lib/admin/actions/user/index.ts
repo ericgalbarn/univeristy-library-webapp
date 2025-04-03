@@ -3,8 +3,10 @@
 import { db } from "@/db/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { userUpdateSchema } from "./schema";
 
-export const getAllUsers = async () => {
+export async function getAllUsers() {
   try {
     const allUsers = await db
       .select({
@@ -31,9 +33,9 @@ export const getAllUsers = async () => {
       error: "An error occurred while fetching users",
     };
   }
-};
+}
 
-export const getUserById = async (id: string) => {
+export async function getUserById(id: string) {
   try {
     const user = await db
       .select({
@@ -69,4 +71,43 @@ export const getUserById = async (id: string) => {
       error: "An error occurred while fetching the user",
     };
   }
-};
+}
+
+export async function updateUser(id: string, userData: z.infer<typeof userUpdateSchema>) {
+  try {
+    // Validate the user data
+    const validatedData = userUpdateSchema.parse(userData);
+    
+    // Update the user
+    await db
+      .update(users)
+      .set({
+        fullName: validatedData.fullName,
+        email: validatedData.email,
+        universityId: validatedData.universityId,
+        status: validatedData.status,
+        role: validatedData.role,
+      })
+      .where(eq(users.id, id));
+
+    return {
+      success: true,
+      message: "User updated successfully",
+    };
+  } catch (error) {
+    console.error("Error updating user:", error);
+    
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        error: "Validation error",
+        validationErrors: error.errors,
+      };
+    }
+    
+    return {
+      success: false,
+      error: "An error occurred while updating the user",
+    };
+  }
+}
