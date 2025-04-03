@@ -11,14 +11,29 @@ export async function getAllUsers(filters?: z.infer<typeof userFiltersSchema>) {
     const conditions: SQL[] = [];
     
     if (filters) {
-      // Filter by search query (match name or email)
+      // Filter by search query (match name, email, or university ID)
       if (filters.search) {
-        const searchTerm = `%${filters.search}%`;
-        conditions.push(or(
-          like(users.fullName, searchTerm),
-          like(users.email, searchTerm),
-          like(users.universityId.toString(), searchTerm) // Need to convert to string for LIKE
-        ));
+        const searchTerm = `%${filters.search.trim()}%`;
+        
+        // Try to parse as a number for direct universityId comparison
+        const numericSearch = parseInt(filters.search.trim());
+        const isNumeric = !isNaN(numericSearch);
+        
+        if (isNumeric) {
+          // If it's a number, we can do both string match and direct numeric comparison
+          conditions.push(or(
+            like(users.fullName, searchTerm),
+            like(users.email, searchTerm),
+            like(users.universityId.toString(), searchTerm),
+            eq(users.universityId, numericSearch)
+          ));
+        } else {
+          // If it's not a number, we only do string matching
+          conditions.push(or(
+            like(users.fullName, searchTerm),
+            like(users.email, searchTerm)
+          ));
+        }
       }
       
       // Filter by status
