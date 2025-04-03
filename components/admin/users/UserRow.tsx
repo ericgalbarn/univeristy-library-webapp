@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { getInitials } from "@/lib/utils";
 import { UserListItem } from "./UserList";
 import Image from "next/image";
-import Link from "next/link";
 import UserEditModal from "./UserEditModal";
+import UserDetailsModal from "./UserDetailsModal";
 
 interface UserRowProps {
   user: UserListItem;
@@ -16,6 +16,7 @@ interface UserRowProps {
 
 const UserRow = ({ user, onUserUpdated }: UserRowProps) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   return (
     <>
@@ -74,19 +75,18 @@ const UserRow = ({ user, onUserUpdated }: UserRowProps) => {
             />
           </Button>
 
-          <Link href={`/admin/users/${user.id}`}>
-            <Button
-              className="h-8 w-8 rounded-full bg-transparent p-0 hover:bg-gray-100"
-              title="View Details"
-            >
-              <Image
-                src="/icons/admin/user.svg"
-                alt="view"
-                width={16}
-                height={16}
-              />
-            </Button>
-          </Link>
+          <Button
+            className="h-8 w-8 rounded-full bg-transparent p-0 hover:bg-gray-100"
+            title="View Details"
+            onClick={() => setIsDetailsModalOpen(true)}
+          >
+            <Image
+              src="/icons/admin/user.svg"
+              alt="view"
+              width={16}
+              height={16}
+            />
+          </Button>
         </div>
       </div>
 
@@ -98,6 +98,12 @@ const UserRow = ({ user, onUserUpdated }: UserRowProps) => {
           onSuccess={onUserUpdated}
         />
       )}
+      
+      <UserDetailsModal
+        userId={user.id}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+      />
     </>
   );
 };
