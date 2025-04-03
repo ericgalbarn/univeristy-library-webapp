@@ -2,50 +2,65 @@
 
 import { db } from "@/db/db";
 import { users } from "@/db/schema";
-import { and, asc, desc, eq, like, gte, lte, SQL, or } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  like,
+  ilike,
+  gte,
+  lte,
+  SQL,
+  or,
+} from "drizzle-orm";
 import { z } from "zod";
 import { userFiltersSchema, userUpdateSchema } from "./schema";
 
 export async function getAllUsers(filters?: z.infer<typeof userFiltersSchema>) {
   try {
     const conditions: SQL[] = [];
-    
+
     if (filters) {
       // Filter by search query (match name, email, or university ID)
       if (filters.search) {
         const searchTerm = `%${filters.search.trim()}%`;
-        
+
         // Try to parse as a number for direct universityId comparison
         const numericSearch = parseInt(filters.search.trim());
         const isNumeric = !isNaN(numericSearch);
-        
+
         if (isNumeric) {
           // If it's a number, we can do both string match and direct numeric comparison
-          conditions.push(or(
-            like(users.fullName, searchTerm),
-            like(users.email, searchTerm),
-            like(users.universityId.toString(), searchTerm),
-            eq(users.universityId, numericSearch)
-          ));
+          conditions.push(
+            or(
+              ilike(users.fullName, searchTerm),
+              ilike(users.email, searchTerm),
+              ilike(users.universityId.toString(), searchTerm),
+              eq(users.universityId, numericSearch)
+            )
+          );
         } else {
           // If it's not a number, we only do string matching
-          conditions.push(or(
-            like(users.fullName, searchTerm),
-            like(users.email, searchTerm)
-          ));
+          conditions.push(
+            or(
+              ilike(users.fullName, searchTerm),
+              ilike(users.email, searchTerm)
+            )
+          );
         }
       }
-      
+
       // Filter by status
       if (filters.status) {
         conditions.push(eq(users.status, filters.status));
       }
-      
+
       // Filter by role
       if (filters.role) {
         conditions.push(eq(users.role, filters.role));
       }
-      
+
       // Filter by created date
       if (filters.createdAfter) {
         conditions.push(gte(users.createAt, new Date(filters.createdAfter)));
@@ -53,16 +68,20 @@ export async function getAllUsers(filters?: z.infer<typeof userFiltersSchema>) {
       if (filters.createdBefore) {
         conditions.push(lte(users.createAt, new Date(filters.createdBefore)));
       }
-      
+
       // Filter by last active date
       if (filters.lastActiveAfter) {
-        conditions.push(gte(users.lastActivityDate, new Date(filters.lastActiveAfter)));
+        conditions.push(
+          gte(users.lastActivityDate, new Date(filters.lastActiveAfter))
+        );
       }
       if (filters.lastActiveBefore) {
-        conditions.push(lte(users.lastActivityDate, new Date(filters.lastActiveBefore)));
+        conditions.push(
+          lte(users.lastActivityDate, new Date(filters.lastActiveBefore))
+        );
       }
     }
-    
+
     // Start building the query
     let query = db
       .select({
@@ -76,17 +95,19 @@ export async function getAllUsers(filters?: z.infer<typeof userFiltersSchema>) {
         createAt: users.createAt,
       })
       .from(users);
-    
+
     // Add conditions if any
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
-    
+
     // Add sorting
     if (filters?.sortBy) {
       const column = users[filters.sortBy as keyof typeof users];
       if (column) {
-        query = query.orderBy(filters.sortOrder === 'desc' ? desc(column) : asc(column));
+        query = query.orderBy(
+          filters.sortOrder === "desc" ? desc(column) : asc(column)
+        );
       } else {
         // Default sort by creation date
         query = query.orderBy(desc(users.createAt));
@@ -95,7 +116,7 @@ export async function getAllUsers(filters?: z.infer<typeof userFiltersSchema>) {
       // Default sort by creation date
       query = query.orderBy(desc(users.createAt));
     }
-    
+
     const allUsers = await query;
 
     return {
@@ -149,11 +170,14 @@ export async function getUserById(id: string) {
   }
 }
 
-export async function updateUser(id: string, userData: z.infer<typeof userUpdateSchema>) {
+export async function updateUser(
+  id: string,
+  userData: z.infer<typeof userUpdateSchema>
+) {
   try {
     // Validate the user data
     const validatedData = userUpdateSchema.parse(userData);
-    
+
     // Update the user
     await db
       .update(users)
@@ -172,7 +196,7 @@ export async function updateUser(id: string, userData: z.infer<typeof userUpdate
     };
   } catch (error) {
     console.error("Error updating user:", error);
-    
+
     if (error instanceof z.ZodError) {
       return {
         success: false,
@@ -180,7 +204,7 @@ export async function updateUser(id: string, userData: z.infer<typeof userUpdate
         validationErrors: error.errors,
       };
     }
-    
+
     return {
       success: false,
       error: "An error occurred while updating the user",

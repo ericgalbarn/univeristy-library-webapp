@@ -100,11 +100,16 @@ const UsersPage = () => {
         setFilters((prevFilters) => {
           // Only update if search value actually changed
           if (prevFilters.search !== updatedFilters.search) {
-            fetchUsers(updatedFilters);
+            // Don't call fetchUsers here inside setState
             return updatedFilters;
           }
           return prevFilters;
         });
+
+        // Move the fetchUsers call outside of the setState callback
+        if (filters.search !== updatedFilters.search) {
+          fetchUsers(updatedFilters);
+        }
       }
     }, 800); // Longer debounce for better UX, since we can search on Enter too
 
@@ -124,21 +129,29 @@ const UsersPage = () => {
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+    const newValue = e.target.value;
+    setSearchQuery(newValue);
 
-    // If user clears the search input, immediately update filters to remove search criteria
-    if (e.target.value === "") {
-      const updatedFilters = { ...filters };
-      delete updatedFilters.search;
-      setFilters(updatedFilters);
-      fetchUsers(updatedFilters);
+    // If user clears the search input, update filters in the next tick
+    if (newValue === "") {
+      // Use setTimeout to move the state update out of the render cycle
+      setTimeout(() => {
+        const updatedFilters = { ...filters };
+        delete updatedFilters.search;
+        setFilters(updatedFilters);
+        fetchUsers(updatedFilters);
+      }, 0);
     }
   };
 
   const handleClearAllFilters = () => {
     setSearchQuery("");
-    setFilters({});
-    fetchUsers({});
+
+    // Use setTimeout to move state updates out of the render cycle
+    setTimeout(() => {
+      setFilters({});
+      fetchUsers({});
+    }, 0);
   };
 
   const handleExport = async () => {
