@@ -92,8 +92,31 @@ export const signUp = async (params: AuthCredentials) => {
       body: {
         email,
         fullName,
+        universityId,
       },
     });
+
+    // For local development, also send a direct email using our new templates
+    // Remove this in production
+    if (process.env.NODE_ENV === "development") {
+      const { generateWelcomeEmail } = await import("@/lib/emailTemplates");
+      const { sendEmail } = await import("@/lib/workflow");
+
+      try {
+        const welcomeEmail = await generateWelcomeEmail({
+          fullName,
+          universityId: universityId?.toString(),
+        });
+        await sendEmail({
+          email,
+          subject: "Welcome to the University Library (DEV)",
+          message: welcomeEmail,
+        });
+        console.log("Development welcome email sent directly");
+      } catch (error) {
+        console.error("Failed to send development email:", error);
+      }
+    }
 
     return {
       success: true,

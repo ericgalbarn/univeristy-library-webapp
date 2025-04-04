@@ -3,11 +3,18 @@ import { users } from "@/db/schema";
 import { sendEmail } from "@/lib/workflow";
 import { serve } from "@upstash/workflow/nextjs";
 import { eq } from "drizzle-orm";
+import {
+  generateWelcomeEmail,
+  generateNonActiveEmail,
+  generateWelcomeBackEmail,
+} from "@/lib/emailTemplates";
 
 type UserState = "non-active" | "active";
+
 type InitialData = {
   email: string;
   fullName: string;
+  universityId?: string;
 };
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -40,13 +47,15 @@ const getUserState = async (email: string): Promise<UserState> => {
 };
 
 export const { POST } = serve<InitialData>(async (context) => {
-  const { email, fullName } = context.requestPayload;
+  const { email, fullName, universityId } = context.requestPayload;
+
   // Welcome Email
   await context.run("new-signup", async () => {
+    const welcomeEmail = await generateWelcomeEmail({ fullName, universityId });
     await sendEmail({
       email,
-      subject: "Welcome to the platform",
-      message: `Welcome ${fullName}!`,
+      subject: "Welcome to the University Library",
+      message: welcomeEmail,
     });
   });
 
@@ -59,18 +68,20 @@ export const { POST } = serve<InitialData>(async (context) => {
 
     if (state === "non-active") {
       await context.run("send-email-non-active", async () => {
+        const nonActiveEmail = await generateNonActiveEmail({ fullName });
         await sendEmail({
           email,
-          subject: "Are you still there?",
-          message: `Hey ${fullName}, we miss you!`,
+          subject: "We Miss You at the University Library",
+          message: nonActiveEmail,
         });
       });
     } else if (state === "active") {
       await context.run("send-email-active", async () => {
+        const welcomeBackEmail = await generateWelcomeBackEmail({ fullName });
         await sendEmail({
           email,
-          subject: "Welcome back!",
-          message: `Welcome back ${fullName}!`,
+          subject: "Welcome Back to the University Library",
+          message: welcomeBackEmail,
         });
       });
     }
