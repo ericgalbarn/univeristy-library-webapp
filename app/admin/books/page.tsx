@@ -1,6 +1,14 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
+import dynamic from "next/dynamic";
+
+// Dynamic import to prevent hydration errors with client components
+const BookList = dynamic(() => import("@/components/admin/books/BookList"), {
+  loading: () => <p className="p-6 text-center">Loading books list...</p>,
+});
 
 type Props = {};
 
@@ -17,7 +25,7 @@ const Page = (props: Props) => {
       </div>
 
       <div className="mt-7 w-full overflow-hidden">
-        <p>Table</p>
+        <BookList />
       </div>
     </section>
   );
