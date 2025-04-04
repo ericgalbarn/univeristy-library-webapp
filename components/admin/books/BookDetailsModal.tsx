@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { Star } from "lucide-react";
 import config from "@/lib/config";
 import { IKVideo, ImageKitProvider } from "imagekitio-next";
+import Link from "next/link";
 
 interface BookDetailsModalProps {
   bookId: string;
@@ -203,6 +204,27 @@ const BookDetailsModal = ({
                     "MMMM d, yyyy"
                   )}
                 </p>
+                <div className="mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 text-primary-admin hover:bg-primary-admin/10"
+                    asChild
+                  >
+                    <Link
+                      href={`/admin/books/${book.id}/edit`}
+                      onClick={onClose}
+                    >
+                      <Image
+                        src="/icons/admin/edit.svg"
+                        alt="edit"
+                        width={16}
+                        height={16}
+                      />
+                      Edit Book
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </div>
 
