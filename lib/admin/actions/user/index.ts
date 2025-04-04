@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/db";
-import { users } from "@/db/schema";
+import { users, borrowRecords, books } from "@/db/schema";
 import {
   and,
   asc,
@@ -208,6 +208,40 @@ export async function updateUser(
     return {
       success: false,
       error: "An error occurred while updating the user",
+    };
+  }
+}
+
+export async function getUserBorrowingHistory(userId: string) {
+  try {
+    // Fetch all borrowing records for the user with book details
+    const userBorrowings = await db
+      .select({
+        id: borrowRecords.id,
+        bookId: borrowRecords.bookId,
+        bookTitle: books.title,
+        bookAuthor: books.author,
+        bookCoverUrl: books.coverUrl,
+        bookCoverColor: books.coverColor,
+        borrowDate: borrowRecords.borrowDate,
+        dueDate: borrowRecords.dueDate,
+        returnDate: borrowRecords.returnDate,
+        status: borrowRecords.status,
+      })
+      .from(borrowRecords)
+      .innerJoin(books, eq(borrowRecords.bookId, books.id))
+      .where(eq(borrowRecords.userId, userId))
+      .orderBy(desc(borrowRecords.borrowDate));
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(userBorrowings)),
+    };
+  } catch (error) {
+    console.error("Error fetching user borrowing history:", error);
+    return {
+      success: false,
+      error: "An error occurred while fetching borrowing history",
     };
   }
 }

@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getUserById } from "@/lib/admin/actions/user";
+import { getUserById, getUserBorrowingHistory } from "@/lib/admin/actions/user";
 import { X, Calendar, Clock, BookOpen, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -23,6 +23,19 @@ interface UserDetailsModalProps {
   onClose: () => void;
 }
 
+interface BorrowRecord {
+  id: string;
+  bookId: string;
+  bookTitle: string;
+  bookAuthor: string;
+  bookCoverUrl: string;
+  bookCoverColor: string;
+  borrowDate: string;
+  dueDate: string;
+  returnDate: string | null;
+  status: string;
+}
+
 const UserDetailsModal = ({
   userId,
   isOpen,
@@ -34,6 +47,9 @@ const UserDetailsModal = ({
   const [activeTab, setActiveTab] = useState<"profile" | "borrowing">(
     "profile"
   );
+  const [borrowings, setBorrowings] = useState<BorrowRecord[]>([]);
+  const [borrowingsLoading, setBorrowingsLoading] = useState(false);
+  const [borrowingsError, setBorrowingsError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -67,8 +83,41 @@ const UserDetailsModal = ({
       setLoading(true);
       setError(null);
       setActiveTab("profile");
+      setBorrowings([]);
+      setBorrowingsLoading(false);
+      setBorrowingsError(null);
     }
   }, [userId, isOpen]);
+
+  // Fetch borrowing history when activeTab changes to "borrowing"
+  useEffect(() => {
+    const fetchBorrowingHistory = async () => {
+      if (!userId || activeTab !== "borrowing") return;
+
+      setBorrowingsLoading(true);
+      setBorrowingsError(null);
+
+      try {
+        const { success, data, error } = await getUserBorrowingHistory(userId);
+
+        if (success && data) {
+          setBorrowings(data);
+        } else {
+          setBorrowingsError(error || "Failed to fetch borrowing history");
+          console.error("Error fetching borrowing history:", error);
+        }
+      } catch (err) {
+        console.error("Error fetching borrowing history:", err);
+        setBorrowingsError(
+          "An unexpected error occurred while fetching borrowing history"
+        );
+      } finally {
+        setBorrowingsLoading(false);
+      }
+    };
+
+    fetchBorrowingHistory();
+  }, [userId, activeTab]);
 
   if (!isOpen) return null;
 
@@ -230,25 +279,106 @@ const UserDetailsModal = ({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-md bg-amber-50 px-4 py-3">
-                  <div className="flex items-center">
-                    <BookOpen className="mr-2 h-5 w-5 text-amber-500" />
-                    <span className="text-sm text-amber-800">
-                      Borrowing history will be implemented in a future update.
+                {borrowingsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-primary-admin"></div>
+                    <span className="ml-2 text-sm text-gray-600">
+                      Loading borrowing history...
                     </span>
                   </div>
-                </div>
-
-                {/* Placeholder for borrowing history */}
-                <div className="rounded-md border border-gray-200 p-6 text-center">
-                  <BookOpen className="mx-auto h-8 w-8 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">
-                    No borrowing records
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    This user hasn't borrowed any books yet.
-                  </p>
-                </div>
+                ) : borrowingsError ? (
+                  <div className="rounded-md bg-red-50 p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <X className="h-5 w-5 text-red-400" />
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800">
+                          Error loading borrowing history
+                        </h3>
+                        <div className="mt-2 text-sm text-red-700">
+                          <p>{borrowingsError}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : borrowings.length === 0 ? (
+                  <div className="rounded-md border border-gray-200 p-6 text-center">
+                    <BookOpen className="mx-auto h-8 w-8 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">
+                      No borrowing records
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      This user hasn't borrowed any books yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Showing {borrowings.length} borrowed{" "}
+                      {borrowings.length === 1 ? "book" : "books"}
+                    </h3>
+                    <div className="divide-y divide-gray-200">
+                      {borrowings.map((borrowing) => (
+                        <div key={borrowing.id} className="flex py-4">
+                          <div className="mr-4 flex-shrink-0 self-start">
+                            <div
+                              className="h-16 w-12 rounded-sm"
+                              style={{
+                                backgroundColor: borrowing.bookCoverColor,
+                              }}
+                            >
+                              {borrowing.bookCoverUrl && (
+                                <Image
+                                  src={`${config.env.imagekit.urlEndpoint}${borrowing.bookCoverUrl}`}
+                                  alt={borrowing.bookTitle}
+                                  width={48}
+                                  height={64}
+                                  className="h-full w-full rounded-sm object-cover"
+                                />
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium">
+                              {borrowing.bookTitle}
+                            </h4>
+                            <p className="text-xs text-gray-500">
+                              by {borrowing.bookAuthor}
+                            </p>
+                            <div className="mt-1 space-y-1">
+                              <p className="flex items-center text-xs text-gray-500">
+                                <Calendar className="mr-1 h-3 w-3" />
+                                Borrowed:{" "}
+                                {format(
+                                  new Date(borrowing.borrowDate),
+                                  "MMM d, yyyy"
+                                )}
+                              </p>
+                              <p className="flex items-center text-xs text-gray-500">
+                                <Calendar className="mr-1 h-3 w-3" />
+                                Due:{" "}
+                                {format(
+                                  new Date(borrowing.dueDate),
+                                  "MMM d, yyyy"
+                                )}
+                              </p>
+                              <span
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                  borrowing.status === "RETURNED"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-amber-100 text-amber-800"
+                                }`}
+                              >
+                                {borrowing.status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
