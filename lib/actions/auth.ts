@@ -29,6 +29,25 @@ export const signInWithCredentials = async (
     });
 
     if (result?.error) {
+      if (result.error.includes("pending approval")) {
+        return {
+          success: false,
+          error:
+            "Your account is pending approval. Please wait for admin verification.",
+        };
+      } else if (result.error.includes("rejected")) {
+        return {
+          success: false,
+          error:
+            "Your account registration has been rejected. Please contact support.",
+        };
+      } else if (result.error.includes("access denied")) {
+        return {
+          success: false,
+          error: "Account access denied. Please contact support.",
+        };
+      }
+
       return { success: false, error: result.error };
     }
 
@@ -76,9 +95,11 @@ export const signUp = async (params: AuthCredentials) => {
       },
     });
 
-    await signInWithCredentials({ email, password });
-
-    return { success: true };
+    return {
+      success: true,
+      message:
+        "Your account has been created and is pending approval. You'll be notified once approved.",
+    };
   } catch (error) {
     console.log(error, "Signup error");
     return { success: false, error: "Signup error" };

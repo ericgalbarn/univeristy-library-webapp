@@ -33,6 +33,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!isPasswordValid) return null;
 
+        // Check if user status is APPROVED
+        if (user[0].status !== "APPROVED" && user[0].role !== "ADMIN") {
+          if (user[0].status === "PENDING") {
+            throw new Error(
+              "Your account is pending approval. Please wait for admin verification."
+            );
+          } else if (user[0].status === "REJECTED") {
+            throw new Error(
+              "Your account registration has been rejected. Please contact support."
+            );
+          } else {
+            throw new Error("Account access denied. Please contact support.");
+          }
+        }
+
         return {
           id: user[0].id.toString(),
           email: user[0].email,

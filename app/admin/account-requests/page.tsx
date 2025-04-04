@@ -23,6 +23,7 @@ import {
   X as XIcon,
   Image,
   ZoomIn,
+  UserPlus,
 } from "lucide-react";
 import {
   Tooltip,
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/tooltip";
 import axios from "axios";
 import config from "@/lib/config";
+import { toast } from "@/hooks/use-toast";
 
 // Type definition for account requests
 type AccountRequestType = {
@@ -42,6 +44,67 @@ type AccountRequestType = {
   universityCard: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   createAt: string;
+};
+
+// Add this EmptyState component right after the imports but before the AccountRequestsPage component definition
+const EmptyState = ({
+  activeTab,
+  onClearSearch,
+}: {
+  activeTab: string;
+  onClearSearch?: () => void;
+}) => {
+  let title = "No account requests found";
+  let message = "";
+
+  switch (activeTab) {
+    case "pending":
+      title = "No pending account requests";
+      message =
+        "There are no pending account verification requests at this time.";
+      break;
+    case "approved":
+      title = "No approved accounts";
+      message = "You haven't approved any account requests yet.";
+      break;
+    case "rejected":
+      title = "No rejected accounts";
+      message = "You haven't rejected any account requests yet.";
+      break;
+    default:
+      title = "No account requests";
+      message = "There are no account verification requests at this time.";
+  }
+
+  return (
+    <div className="flex h-60 flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
+        <UserPlus className="h-6 w-6 text-gray-400" />
+      </div>
+      <h3 className="mt-3 text-sm font-semibold text-gray-900">{title}</h3>
+      <p className="mt-1 text-sm text-gray-500">{message}</p>
+      {onClearSearch && (
+        <div className="mt-4 flex gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearSearch}
+            className="text-xs"
+          >
+            Clear search
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => window.location.reload()}
+            className="bg-amber-600 text-xs hover:bg-amber-700"
+          >
+            Refresh
+          </Button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const AccountRequestsPage = () => {
@@ -245,9 +308,32 @@ const AccountRequestsPage = () => {
     );
   };
 
-  // Export to Excel (placeholder)
-  const handleExport = () => {
-    alert("Export feature will be implemented here");
+  // Export to Excel
+  const handleExport = async () => {
+    try {
+      const response = await axios.get("/api/admin/account-requests/export", {
+        responseType: "blob",
+      });
+
+      // Create a download link for the Excel file
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `account-requests-${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Error exporting account requests:", error);
+      toast({
+        title: "Export failed",
+        description: "Failed to export account requests. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Clear search
@@ -261,532 +347,451 @@ const AccountRequestsPage = () => {
     setEnlargedImage(url);
   };
 
-  // Render empty state
-  const renderEmptyState = () => (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="mb-4 rounded-full bg-gray-100 p-3">
-        <svg
-          className="h-8 w-8 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-          ></path>
-        </svg>
-      </div>
-      <h3 className="mb-1 text-lg font-medium">No account requests found</h3>
-      {activeTab === "pending" ? (
-        <p className="mb-4 text-sm text-gray-500">
-          There are no pending account requests at this time.
-        </p>
-      ) : (
-        <p className="mb-4 text-sm text-gray-500">
-          {activeTab === "approved"
-            ? "No approved accounts found matching your criteria."
-            : "No rejected accounts found matching your criteria."}
-        </p>
-      )}
-      {searchQuery && (
-        <Button variant="outline" onClick={handleClearSearch} size="sm">
-          Clear search
-        </Button>
-      )}
-    </div>
-  );
-
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Account Requests</h1>
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleRefresh}
-                  disabled={loading}
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Refresh</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleExport}
-                  disabled={loading || filteredRequests.length === 0}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Export to Excel</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+    <section className="w-full rounded-2xl bg-white p-7">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-semibold">Account Approval Requests</h2>
+        <div className="flex gap-2">
+          <Button
+            className="bg-primary-admin text-white"
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              "Refresh List"
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export List
+          </Button>
         </div>
       </div>
 
-      <div className="rounded-lg border shadow-sm">
-        <div className="flex flex-col space-y-1.5 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-semibold leading-none tracking-tight">
-                Account Approval Requests
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Review and manage user account requests
-              </p>
+      <div className="mt-7 w-full overflow-hidden">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="relative w-64">
+            <input
+              type="text"
+              placeholder="Search by name, email, ID..."
+              className={`w-full rounded-md border ${searchQuery ? "border-primary-admin" : "border-gray-300"} px-3 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-primary-admin`}
+              value={searchQuery}
+              onChange={handleSearch}
+              aria-label="Search account requests"
+            />
+            <div className="absolute left-3 top-2.5">
+              <svg
+                className={`h-4 w-4 ${searchQuery ? "text-primary-admin" : "text-gray-400"}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
             </div>
-            <div className="relative w-64">
-              <input
-                type="text"
-                placeholder="Search by name, email, ID..."
-                className="w-full rounded-md border border-gray-300 pl-9 pr-4 py-2 text-sm focus:border-primary-admin focus:outline-none focus:ring-1 focus:ring-primary-admin"
-                value={searchQuery}
-                onChange={handleSearch}
-              />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              {searchQuery && (
-                <button
-                  onClick={handleClearSearch}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 pt-0">
-          <div className="mb-4 grid w-full grid-cols-4">
-            <button
-              className={`px-3 py-2 text-sm font-medium ${activeTab === "pending" ? "border-b-2 border-primary-admin text-primary-admin" : "text-gray-500 hover:text-gray-700"}`}
-              onClick={() => handleTabChange("pending")}
-            >
-              Pending
-            </button>
-            <button
-              className={`px-3 py-2 text-sm font-medium ${activeTab === "approved" ? "border-b-2 border-primary-admin text-primary-admin" : "text-gray-500 hover:text-gray-700"}`}
-              onClick={() => handleTabChange("approved")}
-            >
-              Approved
-            </button>
-            <button
-              className={`px-3 py-2 text-sm font-medium ${activeTab === "rejected" ? "border-b-2 border-primary-admin text-primary-admin" : "text-gray-500 hover:text-gray-700"}`}
-              onClick={() => handleTabChange("rejected")}
-            >
-              Rejected
-            </button>
-            <button
-              className={`px-3 py-2 text-sm font-medium ${activeTab === "all" ? "border-b-2 border-primary-admin text-primary-admin" : "text-gray-500 hover:text-gray-700"}`}
-              onClick={() => handleTabChange("all")}
-            >
-              All Requests
-            </button>
-          </div>
-
-          <div className="mt-0">
-            {loading ? (
-              <div className="flex h-40 items-center justify-center">
-                <RefreshCw className="h-8 w-8 animate-spin text-primary-admin" />
-              </div>
-            ) : error ? (
-              <div className="flex h-40 flex-col items-center justify-center text-center">
-                <div className="mb-2 text-red-500">
-                  <svg
-                    className="mx-auto h-10 w-10"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    ></path>
-                  </svg>
-                </div>
-                <p className="text-lg font-medium">Error loading data</p>
-                <p className="mt-1 text-sm text-gray-500">{error}</p>
-                <Button
-                  onClick={handleRefresh}
-                  className="mt-4"
-                  variant="secondary"
-                >
-                  Try Again
-                </Button>
-              </div>
-            ) : filteredRequests.length === 0 ? (
-              renderEmptyState()
-            ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b border-gray-200 text-left text-sm font-medium text-gray-500">
-                        <th className="px-4 py-3">User</th>
-                        <th className="px-4 py-3">University ID</th>
-                        <th className="px-4 py-3">Date</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentRecords.map((request) => (
-                        <tr
-                          key={request.id}
-                          className="border-b border-gray-200 text-sm hover:bg-gray-50"
-                        >
-                          <td className="px-4 py-3">
-                            <div className="flex items-center">
-                              <Avatar className="mr-3 h-8 w-8">
-                                <AvatarImage
-                                  src={`https://ui-avatars.com/api/?name=${request.fullName}&background=random`}
-                                  alt={request.fullName}
-                                />
-                                <AvatarFallback>
-                                  {request.fullName.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="font-medium">
-                                  {request.fullName}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {request.email}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">{request.universityId}</td>
-                          <td className="px-4 py-3">
-                            {format(new Date(request.createAt), "MMM d, yyyy")}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                request.status === "PENDING"
-                                  ? "bg-amber-100 text-amber-700"
-                                  : request.status === "APPROVED"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-red-100 text-red-700"
-                              }`}
-                            >
-                              {request.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewDetails(request)}
-                              >
-                                View
-                              </Button>
-
-                              {request.status === "PENDING" && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-green-600 hover:bg-green-50 hover:text-green-700"
-                                    onClick={() =>
-                                      handleStatusUpdate(request.id, "APPROVED")
-                                    }
-                                    disabled={processingIds.includes(
-                                      request.id
-                                    )}
-                                  >
-                                    {processingIds.includes(request.id) ? (
-                                      <RefreshCw className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                      "Approve"
-                                    )}
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                                    onClick={() =>
-                                      handleStatusUpdate(request.id, "REJECTED")
-                                    }
-                                    disabled={processingIds.includes(
-                                      request.id
-                                    )}
-                                  >
-                                    {processingIds.includes(request.id) ? (
-                                      <RefreshCw className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                      "Reject"
-                                    )}
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="text-sm text-gray-500">
-                      Showing {indexOfFirstRecord + 1} to{" "}
-                      {Math.min(indexOfLastRecord, filteredRequests.length)} of{" "}
-                      {filteredRequests.length} records
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => paginate(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .filter(
-                          (page) =>
-                            page === 1 ||
-                            page === totalPages ||
-                            Math.abs(page - currentPage) <= 1
-                        )
-                        .map((page, i, arr) => (
-                          <React.Fragment key={page}>
-                            {i > 0 && arr[i - 1] !== page - 1 && (
-                              <span className="px-2 text-gray-400">...</span>
-                            )}
-                            <Button
-                              variant={
-                                page === currentPage ? "default" : "outline"
-                              }
-                              size="icon"
-                              onClick={() => paginate(page)}
-                            >
-                              {page}
-                            </Button>
-                          </React.Fragment>
-                        ))}
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() =>
-                          paginate(Math.min(totalPages, currentPage + 1))
-                        }
-                        disabled={currentPage === totalPages}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </>
+            {searchQuery && (
+              <button
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                onClick={handleClearSearch}
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
             )}
           </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant={activeTab === "all" ? "default" : "outline"}
+              onClick={() => handleTabChange("all")}
+              className={
+                activeTab === "all" ? "bg-primary-admin text-white" : ""
+              }
+              size="sm"
+            >
+              All
+            </Button>
+            <Button
+              variant={activeTab === "pending" ? "default" : "outline"}
+              onClick={() => handleTabChange("pending")}
+              className={
+                activeTab === "pending" ? "bg-amber-600 text-white" : ""
+              }
+              size="sm"
+            >
+              Pending
+            </Button>
+            <Button
+              variant={activeTab === "approved" ? "default" : "outline"}
+              onClick={() => handleTabChange("approved")}
+              className={
+                activeTab === "approved" ? "bg-green-600 text-white" : ""
+              }
+              size="sm"
+            >
+              Approved
+            </Button>
+            <Button
+              variant={activeTab === "rejected" ? "default" : "outline"}
+              onClick={() => handleTabChange("rejected")}
+              className={
+                activeTab === "rejected" ? "bg-red-600 text-white" : ""
+              }
+              size="sm"
+            >
+              Rejected
+            </Button>
+          </div>
         </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center p-10">
+            <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary-admin"></div>
+            <span className="ml-2 text-gray-600">Loading requests...</span>
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-8 text-center text-red-500">
+            {error}
+            <Button
+              variant="outline"
+              className="ml-4 border-red-200 text-red-500 hover:bg-red-100"
+              onClick={handleRefresh}
+            >
+              Try Again
+            </Button>
+          </div>
+        ) : filteredRequests.length > 0 ? (
+          <div className="overflow-hidden rounded-lg border border-gray-200">
+            <div className="grid grid-cols-5 gap-4 border-b border-gray-200 bg-gray-50 p-4 font-medium">
+              <div className="col-span-2">User</div>
+              <div>University ID</div>
+              <div>Date Requested</div>
+              <div>Actions</div>
+            </div>
+
+            <div>
+              {currentRecords.map((request) => (
+                <div
+                  key={request.id}
+                  className="grid grid-cols-5 gap-4 border-b border-gray-200 p-4 hover:bg-gray-50"
+                >
+                  <div className="col-span-2 flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage
+                        src={`https://ui-avatars.com/api/?name=${request.fullName}&background=random`}
+                        alt={request.fullName}
+                      />
+                      <AvatarFallback>
+                        {request.fullName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {request.fullName}
+                      </p>
+                      <p className="text-sm text-gray-500">{request.email}</p>
+                      <span
+                        className={`mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          request.status === "PENDING"
+                            ? "bg-amber-100 text-amber-700"
+                            : request.status === "APPROVED"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {request.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center text-sm text-gray-600">
+                    {request.universityId}
+                  </div>
+
+                  <div className="flex items-center text-sm text-gray-600">
+                    {format(new Date(request.createAt), "dd MMM yyyy")}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            className="h-8 w-8 rounded-full bg-gray-100 p-0 text-gray-600 hover:bg-gray-200"
+                            title="View Details"
+                            onClick={() => handleViewDetails(request)}
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="1.5"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              ></path>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="1.5"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              ></path>
+                            </svg>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View details</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    {request.status === "PENDING" && (
+                      <>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                className="h-8 w-8 rounded-full bg-green-100 p-0 text-green-800 hover:bg-green-200"
+                                title="Approve"
+                                disabled={processingIds.includes(request.id)}
+                                onClick={() =>
+                                  handleStatusUpdate(request.id, "APPROVED")
+                                }
+                              >
+                                {processingIds.includes(request.id) ? (
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-green-800 border-t-transparent" />
+                                ) : (
+                                  <Check className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Approve this account</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                className="h-8 w-8 rounded-full bg-red-100 p-0 text-red-800 hover:bg-red-200"
+                                title="Reject"
+                                disabled={processingIds.includes(request.id)}
+                                onClick={() =>
+                                  handleStatusUpdate(request.id, "REJECTED")
+                                }
+                              >
+                                {processingIds.includes(request.id) ? (
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-800 border-t-transparent" />
+                                ) : (
+                                  <XIcon className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Reject this account</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <EmptyState
+            activeTab={activeTab}
+            onClearSearch={
+              searchQuery
+                ? () => {
+                    setSearchQuery("");
+                    setFilteredRequests(requests);
+                  }
+                : undefined
+            }
+          />
+        )}
+
+        {filteredRequests.length > 0 && (
+          <div className="mt-4 flex justify-between text-sm text-gray-500">
+            <div>
+              Showing{" "}
+              {filteredRequests.length > 0
+                ? `${indexOfFirstRecord + 1}-${Math.min(
+                    indexOfLastRecord,
+                    filteredRequests.length
+                  )}`
+                : "0"}{" "}
+              of {filteredRequests.length}{" "}
+              {filteredRequests.length === 1 ? "request" : "requests"}
+              {searchQuery && " (filtered)"}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="h-8 border-gray-300 px-3 py-1 text-xs"
+                disabled={currentPage === 1}
+                onClick={() => paginate(Math.max(1, currentPage - 1))}
+              >
+                Previous
+              </Button>
+              <span className="text-xs">
+                Page {currentPage} of {totalPages || 1}
+              </span>
+              <Button
+                variant="outline"
+                className="h-8 border-gray-300 px-3 py-1 text-xs"
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Detail Modal */}
       <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="sm:max-w-md">
           {selectedRequest && (
             <>
               <DialogHeader>
-                <DialogTitle>Account Request Details</DialogTitle>
-                <DialogDescription>
-                  Review user information and verification documents
-                </DialogDescription>
+                <DialogTitle className="mb-4 text-xl">
+                  Account Request Details
+                </DialogTitle>
               </DialogHeader>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <h3 className="mb-2 text-sm font-medium text-gray-500">
-                    User Information
-                  </h3>
-                  <div className="rounded-lg border p-4">
-                    <div className="mb-4 flex items-center">
-                      <Avatar className="mr-3 h-12 w-12">
-                        <AvatarImage
-                          src={`https://ui-avatars.com/api/?name=${selectedRequest.fullName}&background=random`}
-                          alt={selectedRequest.fullName}
-                        />
-                        <AvatarFallback>
-                          {selectedRequest.fullName.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="text-lg font-medium">
-                          {selectedRequest.fullName}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {selectedRequest.email}
-                        </div>
-                      </div>
-                    </div>
+              <div className="flex flex-col gap-6">
+                <div className="flex gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarFallback className="bg-amber-100 text-lg">
+                      {selectedRequest.fullName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold">
+                      {selectedRequest.fullName}
+                    </h3>
+                    <p className="text-gray-600">{selectedRequest.email}</p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      University ID: {selectedRequest.universityId}
+                    </p>
+                  </div>
+                </div>
 
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium text-gray-500">
-                          University ID:
-                        </span>
-                        <span className="text-sm">
-                          {selectedRequest.universityId}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium text-gray-500">
-                          Registration Date:
-                        </span>
-                        <span className="text-sm">
-                          {format(
-                            new Date(selectedRequest.createAt),
-                            "MMMM d, yyyy"
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium text-gray-500">
-                          Status:
-                        </span>
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            selectedRequest.status === "PENDING"
-                              ? "bg-amber-100 text-amber-700"
-                              : selectedRequest.status === "APPROVED"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {selectedRequest.status}
-                        </span>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 gap-4 rounded-lg bg-gray-50 p-4">
+                  <div>
+                    <p className="text-xs text-gray-500">Request Date</p>
+                    <p className="font-medium">
+                      {format(
+                        new Date(selectedRequest.createAt),
+                        "dd MMMM yyyy, HH:mm"
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Status</p>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        selectedRequest.status === "APPROVED"
+                          ? "bg-green-100 text-green-800"
+                          : selectedRequest.status === "REJECTED"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {selectedRequest.status}
+                    </span>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="mb-2 text-sm font-medium text-gray-500">
-                    University Card
-                  </h3>
-                  <div className="rounded-lg border p-4">
-                    {selectedRequest.universityCard ? (
-                      <>
-                        <div
-                          className="relative overflow-hidden rounded-md cursor-pointer group"
-                          onClick={() =>
-                            handleEnlargeImage(
-                              `${config.env.imagekit.urlEndpoint}${selectedRequest.universityCard}`
-                            )
-                          }
-                        >
-                          <img
-                            src={`${config.env.imagekit.urlEndpoint}${selectedRequest.universityCard}`}
-                            alt="University Card"
-                            className="h-auto w-full object-cover transition-transform group-hover:scale-105"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src =
-                                "https://placehold.co/400x250/e2e8f0/64748b?text=University+Card";
-                              console.error(
-                                "Image failed to load:",
-                                selectedRequest.universityCard,
-                                "Attempted URL:",
-                                `${config.env.imagekit.urlEndpoint}${selectedRequest.universityCard}`
-                              );
-                            }}
-                            onLoad={() => {
-                              console.log(
-                                "Image loaded successfully:",
-                                `${config.env.imagekit.urlEndpoint}${selectedRequest.universityCard}`
-                              );
-                            }}
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-                            <ZoomIn className="h-8 w-8 text-white" />
-                          </div>
-                        </div>
-                        <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
-                          <ZoomIn className="h-3 w-3" /> Click image to enlarge
-                          for better verification
-                        </p>
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-40 bg-gray-100 rounded-md">
-                        <Image className="h-8 w-8 text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-500">
-                          No university card image available
-                        </p>
-                      </div>
-                    )}
+                  <p className="mb-2 text-sm font-medium text-gray-700">
+                    University Card/ID
+                  </p>
+                  <div className="overflow-hidden rounded border border-gray-200">
+                    <img
+                      src={`${config.env.imagekit.urlEndpoint}${selectedRequest.universityCard}`}
+                      alt="University Card"
+                      className="w-full object-contain"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src =
+                          "https://placehold.co/400x250/e2e8f0/64748b?text=University+Card";
+                        console.error(
+                          "Image failed to load:",
+                          selectedRequest.universityCard,
+                          "Attempted URL:",
+                          `${config.env.imagekit.urlEndpoint}${selectedRequest.universityCard}`
+                        );
+                      }}
+                    />
                   </div>
                 </div>
-              </div>
 
-              <hr className="my-4 border-t border-gray-200" />
-
-              <DialogFooter>
-                {selectedRequest.status === "PENDING" ? (
-                  <div className="flex w-full justify-between">
-                    <Button
-                      variant="destructive"
-                      onClick={() =>
-                        handleStatusUpdate(selectedRequest.id, "REJECTED")
-                      }
-                      disabled={processingIds.includes(selectedRequest.id)}
-                    >
-                      {processingIds.includes(selectedRequest.id) ? (
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <XIcon className="mr-2 h-4 w-4" />
-                      )}
-                      Reject Account
-                    </Button>
-                    <Button
-                      onClick={() =>
-                        handleStatusUpdate(selectedRequest.id, "APPROVED")
-                      }
-                      disabled={processingIds.includes(selectedRequest.id)}
-                    >
-                      {processingIds.includes(selectedRequest.id) ? (
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Check className="mr-2 h-4 w-4" />
-                      )}
-                      Approve Account
-                    </Button>
-                  </div>
-                ) : (
-                  <Button onClick={() => setDetailModalOpen(false)}>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    onClick={() => setDetailModalOpen(false)}
+                    variant="outline"
+                    className="border-gray-200"
+                  >
                     Close
                   </Button>
-                )}
-              </DialogFooter>
+
+                  {selectedRequest.status === "PENDING" && (
+                    <>
+                      <Button
+                        onClick={() => {
+                          handleStatusUpdate(selectedRequest.id, "REJECTED");
+                        }}
+                        variant="outline"
+                        className="border-red-200 text-red-700 hover:bg-red-50"
+                        disabled={processingIds.includes(selectedRequest.id)}
+                      >
+                        {processingIds.includes(selectedRequest.id) ? (
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-red-700 border-t-transparent" />
+                        ) : null}
+                        Reject
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          handleStatusUpdate(selectedRequest.id, "APPROVED");
+                        }}
+                        className="bg-green-600 text-white hover:bg-green-700"
+                        disabled={processingIds.includes(selectedRequest.id)}
+                      >
+                        {processingIds.includes(selectedRequest.id) ? (
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        ) : null}
+                        Approve
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
             </>
           )}
         </DialogContent>
@@ -832,7 +837,7 @@ const AccountRequestsPage = () => {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </section>
   );
 };
 

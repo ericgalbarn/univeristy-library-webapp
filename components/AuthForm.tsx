@@ -26,11 +26,18 @@ import { FIELD_NAMES, FIELD_TYPES } from "@/constants";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import FileUpload from "./FileUpload";
+import { useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { CheckCircle2 } from "lucide-react";
 
 interface Props<T extends FieldValues> {
   schema: ZodType<T>;
   defaultValues: T;
-  onSubmit: (data: T) => Promise<{ success: boolean; error?: string }>;
+  onSubmit: (data: T) => Promise<{
+    success: boolean;
+    error?: string;
+    message?: string;
+  }>;
   type: "SIGN_IN" | "SIGN_UP";
 }
 
@@ -41,6 +48,8 @@ const AuthForm = <T extends FieldValues>({
   onSubmit,
 }: Props<T>) => {
   const router = useRouter();
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isSignIn = type === "SIGN_IN";
 
@@ -50,23 +59,47 @@ const AuthForm = <T extends FieldValues>({
   });
 
   const handleSubmit: SubmitHandler<T> = async (data) => {
-    const result = await onSubmit(data);
+    setIsSubmitting(true);
+    setSuccessMessage(null);
 
-    if (result.success) {
-      toast({
-        title: "Success",
-        description: isSignIn
-          ? "You have successfully signed in."
-          : "You have successfully signed up.",
-      });
+    try {
+      const result = await onSubmit(data);
 
-      router.push("/");
-    } else {
+      if (result.success) {
+        if (isSignIn) {
+          toast({
+            title: "Success",
+            description: "You have successfully signed in.",
+          });
+          router.push("/");
+        } else {
+          // For sign up, display success message but don't redirect if there's a message
+          if (result.message) {
+            setSuccessMessage(result.message);
+            form.reset();
+          } else {
+            toast({
+              title: "Success",
+              description: "You have successfully signed up.",
+            });
+            router.push("/");
+          }
+        }
+      } else {
+        toast({
+          title: `Error ${isSignIn ? "signing in" : "signing up"}`,
+          description: result.error ?? "An error occurred.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
-        title: `Error ${isSignIn ? "signing in" : "signing up"}`,
-        description: result.error ?? "An error occurred.",
+        title: "Error",
+        description: "An unexpected error occurred.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -82,6 +115,19 @@ const AuthForm = <T extends FieldValues>({
           ? "Access the vast collection of resources, and stay updated"
           : "Please complete all fields and upload a valid university ID to gain access to the library"}
       </p>
+
+      {successMessage && (
+        <Alert className="bg-green-50 border-green-200 text-green-800">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800 font-medium">
+            Registration Successful
+          </AlertTitle>
+          <AlertDescription className="text-green-700">
+            {successMessage}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSubmit)}
@@ -124,8 +170,8 @@ const AuthForm = <T extends FieldValues>({
             />
           ))}
 
-          <Button type="submit" className="form-btn">
-            {isSignIn ? "Sign in" : "Sign up"}
+          <Button type="submit" className="form-btn" disabled={isSubmitting}>
+            {isSubmitting ? "Processing..." : isSignIn ? "Sign in" : "Sign up"}
           </Button>
         </form>
       </Form>
