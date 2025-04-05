@@ -145,13 +145,37 @@ const MyProfilePage = async () => {
     return (
       <div className="container mx-auto max-w-6xl px-4">
         <section className="mb-10">
-          <h1 className="font-bebas-neue text-5xl text-white md:text-7xl">
-            My Profile
-          </h1>
-          <p className="text-xl text-light-100 mt-2">
-            Welcome back,{" "}
-            <span className="font-semibold text-light-200">{userName}</span>
-          </p>
+          <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
+            <div>
+              <div className="flex items-center gap-2 text-sm text-light-400 mb-2">
+                <Link href="/" className="hover:text-light-200">
+                  Home
+                </Link>
+                <span>/</span>
+                <span className="text-light-200">My Profile</span>
+              </div>
+              <h1 className="font-bebas-neue text-5xl text-white md:text-7xl">
+                My Profile
+              </h1>
+              <p className="text-xl text-light-100 mt-2">
+                Welcome back,{" "}
+                <span className="font-semibold text-primary">{userName}</span>
+              </p>
+            </div>
+
+            <div className="hidden md:flex md:items-center md:space-x-4">
+              <div className="rounded-full bg-dark-400/30 p-1.5 border border-dark-600">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-light-200 hover:text-primary hover:bg-dark-500/50"
+                >
+                  <Link href="/">Browse More Books</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
         </section>
 
         <div className="gradient-vertical min-h-[400px] rounded-2xl p-8 flex flex-col items-center justify-center">
@@ -174,13 +198,37 @@ const MyProfilePage = async () => {
   return (
     <div className="container mx-auto max-w-6xl px-4">
       <section className="mb-10">
-        <h1 className="font-bebas-neue text-5xl text-white md:text-7xl">
-          My Profile
-        </h1>
-        <p className="text-xl text-light-100 mt-2">
-          Welcome back,{" "}
-          <span className="font-semibold text-light-200">{userName}</span>
-        </p>
+        <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-light-400 mb-2">
+              <Link href="/" className="hover:text-light-200">
+                Home
+              </Link>
+              <span>/</span>
+              <span className="text-light-200">My Profile</span>
+            </div>
+            <h1 className="font-bebas-neue text-5xl text-white md:text-7xl">
+              My Profile
+            </h1>
+            <p className="text-xl text-light-100 mt-2">
+              Welcome back,{" "}
+              <span className="font-semibold text-primary">{userName}</span>
+            </p>
+          </div>
+
+          <div className="hidden md:flex md:items-center md:space-x-4">
+            <div className="rounded-full bg-dark-400/30 p-1.5 border border-dark-600">
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="text-light-200 hover:text-primary hover:bg-dark-500/50"
+              >
+                <Link href="/">Browse More Books</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <div className="space-y-12">

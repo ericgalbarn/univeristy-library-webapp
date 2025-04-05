@@ -2,28 +2,43 @@ import Link from "next/link";
 import Image from "next/image";
 import { signOut } from "@/auth";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/utils";
+import { Session } from "next-auth";
 
-const Header = () => {
+const Header = ({ session }: { session: Session }) => {
+  const userName = session?.user?.name || "User";
+  const userInitials = getInitials(userName);
+
   return (
-    <header className="my-10 flex justify-between gap-5">
+    <header className="flex items-center justify-between w-full">
+      {/* Logo */}
       <Link href="/">
-        <Image src="/icons/logo.svg" alt="logo" width={40} height={40} />
+        <div className="flex items-center gap-2">
+          <Image src="/icons/logo.svg" alt="logo" height={40} width={40} />
+          <h1 className="text-2xl font-semibold text-primary">Bookaholic</h1>
+        </div>
       </Link>
 
-      <ul className="flex flex-row items-center gap-8">
-        <li>
-          <form
-            action={async () => {
-              "use server";
+      {/* User section and logout */}
+      <div className="flex items-center gap-4">
+        <Link href="/my-profile">
+          <Avatar>
+            <AvatarFallback className="bg-amber-100">
+              {userInitials}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
 
-              await signOut();
-            }}
-            className="mb-10"
-          >
-            <Button>Logout</Button>
-          </form>
-        </li>
-      </ul>
+        <form
+          action={async () => {
+            "use server";
+            await signOut();
+          }}
+        >
+          <Button>Logout</Button>
+        </form>
+      </div>
     </header>
   );
 };
