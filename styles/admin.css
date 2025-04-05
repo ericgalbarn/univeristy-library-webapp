@@ -178,11 +178,11 @@
   }
 
   .admin-sidebar .link {
-    @apply flex flex-row items-center w-full gap-2 rounded-lg px-5 py-3.5 max-md:justify-center;
+    @apply flex flex-row items-center w-full gap-2 rounded-lg px-5 py-3.5 max-md:justify-center transition-all duration-300 ease-in-out hover:bg-light-300;
   }
 
   .admin-sidebar .link p {
-    @apply text-base font-medium max-md:hidden;
+    @apply text-base font-medium max-md:hidden transition-colors duration-300;
   }
 
   .admin-sidebar .user {
@@ -200,5 +200,134 @@
 
   .user-card .email {
     @apply text-light-500 text-sm line-clamp-1 break-words w-full;
+  }
+}
+
+@layer utilities {
+  @keyframes flowRight {
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-flow-once {
+    animation: flowRight 1.5s ease-in-out;
+  }
+
+  @keyframes waterFlow {
+    0% {
+      transform: scaleY(0);
+      transform-origin: bottom;
+      border-radius: 0 8px 0 0;
+      opacity: 0;
+    }
+    25% {
+      transform: scaleY(0.5);
+      transform-origin: bottom;
+      border-radius: 0 6px 0 0;
+      opacity: 0.6;
+    }
+    40% {
+      transform: scaleY(1.1);
+      transform-origin: bottom;
+      border-radius: 0 4px 0 0;
+      opacity: 0.8;
+    }
+    50% {
+      transform: scaleY(0.95);
+      transform-origin: bottom;
+      border-radius: 0 4px 0 0;
+      opacity: 0.9;
+    }
+    65% {
+      transform: scaleY(1.05);
+      transform-origin: bottom;
+      border-radius: 0 3px 0 0;
+      opacity: 0.95;
+    }
+    80% {
+      transform: scaleY(0.98);
+      transform-origin: bottom;
+      border-radius: 0 2px 0 0;
+      opacity: 1;
+    }
+    100% {
+      transform: scaleY(1);
+      transform-origin: bottom;
+      border-radius: 0 1px 0 0;
+      opacity: 1;
+    }
+  }
+
+  .animate-water-flow {
+    animation: waterFlow 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  /* Water wave effect for rippling across the indicator */
+  @keyframes waveEffect {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .water-ripple {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.2) 25%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.2) 75%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: waveEffect 3s ease-in-out infinite;
+    mix-blend-mode: overlay;
+  }
+
+  /* Remove unused animations to avoid clutter */
+  @keyframes indicatorStretch {
+    0% {
+      transform: scaleY(0);
+      transform-origin: bottom;
+      opacity: 0;
+    }
+    100% {
+      transform: scaleY(1);
+      transform-origin: bottom;
+      opacity: 1;
+    }
+  }
+
+  .animate-indicator-stretch {
+    animation: indicatorStretch 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Hover effect animation */
+  @keyframes subtleGlow {
+    0% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+    50% {
+      box-shadow: 0 0 10px 1px rgba(59, 130, 246, 0.2);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+  }
+
+  .animate-glow {
+    animation: subtleGlow 2s ease-in-out infinite;
   }
 }

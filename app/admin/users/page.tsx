@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
-import { X, Download } from "lucide-react";
+import { X, Download, RefreshCw } from "lucide-react";
 
 const UsersPage = () => {
   // Use a ref to track if initial fetch has been done
@@ -280,7 +280,17 @@ const UsersPage = () => {
             }}
             disabled={loading}
           >
-            {loading ? "Refreshing..." : "Refresh List"}
+            {loading ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh List
+              </>
+            )}
           </Button>
           <Button
             variant="outline"

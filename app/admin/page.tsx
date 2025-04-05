@@ -201,7 +201,7 @@ const AdminDashboard = () => {
           <RefreshCw
             className={`h-4 w-4 ${stats.loading ? "animate-spin" : ""}`}
           />
-          {stats.loading ? "Refreshing..." : "Refresh"}
+          {stats.loading ? "Refreshing..." : "Refresh Dashboard"}
         </Button>
       </div>
 

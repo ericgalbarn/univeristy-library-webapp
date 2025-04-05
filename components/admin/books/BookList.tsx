@@ -212,9 +212,9 @@ const BookList = ({ onRefresh }: BookListProps) => {
           <Button
             className="bg-primary-admin text-white"
             onClick={() => fetchBooks(true)}
-            disabled={refreshLoading}
+            disabled={refreshLoading || loading}
           >
-            {refreshLoading ? (
+            {refreshLoading || loading ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                 Refreshing...
