@@ -16,6 +16,7 @@ import {
   Column,
 } from "@react-email/components";
 import config from "@/lib/config";
+import { safeBase64Encode } from "@/lib/utils";
 
 interface WelcomeBackEmailProps {
   fullName: string;
@@ -44,7 +45,7 @@ const LOGO_SVG = `
 `;
 
 // Convert SVG to data URL for email compatibility
-const LOGO_DATA_URL = `data:image/svg+xml;base64,${Buffer.from(LOGO_SVG).toString("base64")}`;
+const LOGO_DATA_URL = `data:image/svg+xml;base64,${safeBase64Encode(LOGO_SVG)}`;
 
 export const WelcomeBackEmail = ({
   fullName = "Library Member",
