@@ -24,19 +24,42 @@ const BookOverview = async ({
   id,
   userId,
 }: Props) => {
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-
-  const borrowingEligibility = {
-    isEligible: availableCopies > 0 && user.status === "APPROVED",
-    message:
-      availableCopies <= 0
-        ? "Book is not available"
-        : "You are not eligible to borrow books",
+  // Default borrowing eligibility - if no user ID or not logged in
+  let borrowingEligibility = {
+    isEligible: false,
+    message: "You need to log in to borrow books",
   };
+
+  let user = null;
+
+  // Only query user if userId is provided
+  if (userId) {
+    try {
+      const userResults = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      user = userResults.length > 0 ? userResults[0] : null;
+
+      // Update borrowing eligibility based on user status and book availability
+      if (user) {
+        borrowingEligibility = {
+          isEligible: availableCopies > 0 && user.status === "APPROVED",
+          message:
+            availableCopies <= 0
+              ? "Book is not available"
+              : user.status !== "APPROVED"
+                ? "Your account is not approved for borrowing yet"
+                : "You are eligible to borrow this book",
+        };
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  }
+
   return (
     <section className="book-overview">
       <div className="flex flex-1 flex-col gap-5">
@@ -67,7 +90,8 @@ const BookOverview = async ({
 
         <p className="book-description">{description}</p>
 
-        {user && (
+        {/* Only show borrow button if user is logged in */}
+        {userId && (
           <BorrowBook
             bookId={id}
             userId={userId}
