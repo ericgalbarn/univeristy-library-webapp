@@ -4,6 +4,15 @@ import BookCover from "./BookCover";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Button } from "./ui/button";
+import { AlertTriangle, Calendar, Clock } from "lucide-react";
+
+interface BookCardProps extends Book {
+  showDueDate?: boolean;
+  dueDate?: Date;
+  daysUntilDue?: number;
+  isOverdue?: boolean;
+  isLoanedBook?: boolean;
+}
 
 const BookCard = ({
   id,
@@ -12,7 +21,20 @@ const BookCard = ({
   coverColor,
   coverUrl,
   isLoanedBook = false,
-}: Book) => {
+  showDueDate = false,
+  dueDate,
+  daysUntilDue,
+  isOverdue,
+}: BookCardProps) => {
+  // Format the due date to a readable string
+  const formattedDueDate = dueDate
+    ? new Date(dueDate).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "";
+
   return (
     <li className={cn(isLoanedBook && "xs:w-52 w-full")}>
       <Link
@@ -26,20 +48,37 @@ const BookCard = ({
           <p className="book-genre">{genre}</p>
         </div>
 
-        {isLoanedBook && (
+        {(isLoanedBook || showDueDate) && dueDate && (
           <div className="mt-3 w-full">
-            <div className="book-loaned">
-              <Image
-                src="icons/calendar.svg"
-                alt="calendar"
-                width={18}
-                height={18}
-                className="object-contain"
-              />
-              <p className="text-light-100">11 days left to return</p>
+            <div
+              className={cn(
+                "book-loaned flex items-center gap-2 p-2 rounded-md",
+                isOverdue
+                  ? "bg-red-50 text-red-700"
+                  : daysUntilDue && daysUntilDue < 3
+                    ? "bg-amber-50 text-amber-700"
+                    : "bg-gray-50 text-gray-700"
+              )}
+            >
+              {isOverdue ? (
+                <AlertTriangle className="h-4 w-4" />
+              ) : (
+                <Calendar className="h-4 w-4" />
+              )}
+
+              <div className="flex flex-col text-xs">
+                <p className="font-medium">
+                  {isOverdue
+                    ? `Overdue by ${Math.abs(daysUntilDue || 0)} days`
+                    : `${daysUntilDue !== undefined ? daysUntilDue : 0} days left to return`}
+                </p>
+                <p className="text-xs opacity-80">Due: {formattedDueDate}</p>
+              </div>
             </div>
 
-            <Button className="book-btn">Download receipt</Button>
+            <Button variant="outline" className="book-btn mt-2 w-full text-xs">
+              Download receipt
+            </Button>
           </div>
         )}
       </Link>
