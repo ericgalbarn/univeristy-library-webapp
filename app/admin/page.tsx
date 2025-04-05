@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import axios from "axios";
+import { toast } from "@/hooks/use-toast";
 
 // Dashboard statistics type
 type DashboardStats = {
@@ -45,75 +46,84 @@ const AdminDashboard = () => {
   });
 
   // Fetch dashboard statistics
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        // In a real implementation, you'd fetch this data from your API
-        // For now, we'll simulate with dummy data
-        // const response = await axios.get('/api/admin/dashboard-stats');
-        // setStats({...response.data, loading: false});
+  const fetchDashboardStats = async () => {
+    setStats((prev) => ({ ...prev, loading: true }));
 
-        // Simulating API response with dummy data
-        setTimeout(() => {
-          setStats({
-            totalUsers: 126,
-            totalBooks: 348,
-            pendingAccountRequests: 14,
-            activeBorrowings: 29,
-            recentActivity: [
-              {
-                id: "1",
-                type: "USER_REGISTERED",
-                userName: "John Smith",
-                timestamp: new Date(
-                  Date.now() - 2 * 60 * 60 * 1000
-                ).toISOString(),
-              },
-              {
-                id: "2",
-                type: "BOOK_BORROWED",
-                userName: "Maria Garcia",
-                bookTitle: "The Great Gatsby",
-                timestamp: new Date(
-                  Date.now() - 5 * 60 * 60 * 1000
-                ).toISOString(),
-              },
-              {
-                id: "3",
-                type: "ACCOUNT_REQUEST",
-                userName: "David Johnson",
-                status: "PENDING",
-                timestamp: new Date(
-                  Date.now() - 8 * 60 * 60 * 1000
-                ).toISOString(),
-              },
-              {
-                id: "4",
-                type: "BOOK_ADDED",
-                bookTitle: "To Kill a Mockingbird",
-                timestamp: new Date(
-                  Date.now() - 1 * 24 * 60 * 60 * 1000
-                ).toISOString(),
-              },
-              {
-                id: "5",
-                type: "ACCOUNT_REQUEST",
-                userName: "Sarah Wilson",
-                status: "APPROVED",
-                timestamp: new Date(
-                  Date.now() - 1.5 * 24 * 60 * 60 * 1000
-                ).toISOString(),
-              },
-            ],
-            loading: false,
-          });
-        }, 1000);
-      } catch (error) {
-        console.error("Error fetching dashboard stats:", error);
-        setStats((prev) => ({ ...prev, loading: false }));
+    try {
+      // Fetch real data from our API endpoint
+      const response = await axios.get("/api/admin/dashboard-stats");
+
+      if (response.data.success) {
+        setStats({
+          ...response.data.stats,
+          loading: false,
+        });
+      } else {
+        throw new Error(
+          response.data.error || "Failed to fetch dashboard statistics"
+        );
       }
-    };
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      toast({
+        title: "Error",
+        description:
+          "Failed to fetch dashboard statistics. Using fallback data.",
+        variant: "destructive",
+      });
 
+      // Fallback to dummy data in case of errors
+      setStats({
+        totalUsers: 126,
+        totalBooks: 348,
+        pendingAccountRequests: 14,
+        activeBorrowings: 29,
+        recentActivity: [
+          {
+            id: "1",
+            type: "USER_REGISTERED",
+            userName: "John Smith",
+            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            id: "2",
+            type: "BOOK_BORROWED",
+            userName: "Maria Garcia",
+            bookTitle: "The Great Gatsby",
+            timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            id: "3",
+            type: "ACCOUNT_REQUEST",
+            userName: "David Johnson",
+            status: "PENDING",
+            timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            id: "4",
+            type: "BOOK_ADDED",
+            bookTitle: "To Kill a Mockingbird",
+            timestamp: new Date(
+              Date.now() - 1 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+          {
+            id: "5",
+            type: "ACCOUNT_REQUEST",
+            userName: "Sarah Wilson",
+            status: "APPROVED",
+            timestamp: new Date(
+              Date.now() - 1.5 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+        ],
+        loading: false,
+      });
+    }
+  };
+
+  // Initialize data
+  useEffect(() => {
     fetchDashboardStats();
   }, []);
 
@@ -162,6 +172,15 @@ const AdminDashboard = () => {
     }
   };
 
+  // Handle refresh
+  const handleRefresh = () => {
+    fetchDashboardStats();
+    toast({
+      title: "Refreshing data",
+      description: "Dashboard statistics are being updated.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Dashboard Header */}
@@ -174,12 +193,15 @@ const AdminDashboard = () => {
         </div>
 
         <Button
-          onClick={() => window.location.reload()}
+          onClick={handleRefresh}
           variant="outline"
           className="flex items-center gap-2"
+          disabled={stats.loading}
         >
-          <RefreshCw className="h-4 w-4" />
-          Refresh
+          <RefreshCw
+            className={`h-4 w-4 ${stats.loading ? "animate-spin" : ""}`}
+          />
+          {stats.loading ? "Refreshing..." : "Refresh"}
         </Button>
       </div>
 
@@ -406,7 +428,7 @@ const AdminDashboard = () => {
               variant="ghost"
               className="w-full justify-center text-xs"
             >
-              <Link href="#">View all activity</Link>
+              <Link href="/admin/activities">View all activity</Link>
             </Button>
           </div>
         </div>
