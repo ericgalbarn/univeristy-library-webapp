@@ -14,7 +14,10 @@ import {
   BookOpen,
   UserPlus,
   BookMarked,
+  Download,
 } from "lucide-react";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 // Activity type
 type Activity = {
@@ -30,6 +33,7 @@ const ActivitiesPage = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -151,6 +155,22 @@ const ActivitiesPage = () => {
     }
   };
 
+  // Get activity type for display
+  const getActivityTypeName = (type: string) => {
+    switch (type) {
+      case "USER_REGISTERED":
+        return "User Registration";
+      case "BOOK_ADDED":
+        return "Book Added";
+      case "BOOK_BORROWED":
+        return "Book Borrowed";
+      case "ACCOUNT_REQUEST":
+        return "Account Request";
+      default:
+        return "Other Activity";
+    }
+  };
+
   // Get current page activities
   const getCurrentPageActivities = () => {
     const startIndex = (currentPage - 1) * activitiesPerPage;
@@ -180,6 +200,118 @@ const ActivitiesPage = () => {
     });
   };
 
+  // Export activities to Excel
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+
+      toast({
+        title: "Exporting",
+        description: "Preparing activity log for export...",
+      });
+
+      // Create a new Excel workbook
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = "Library Admin";
+      workbook.created = new Date();
+
+      // Add worksheet
+      const worksheet = workbook.addWorksheet("Activity Log");
+
+      // Define columns
+      worksheet.columns = [
+        { header: "Type", key: "type", width: 20 },
+        { header: "Details", key: "details", width: 40 },
+        { header: "User", key: "user", width: 25 },
+        { header: "Book", key: "book", width: 25 },
+        { header: "Status", key: "status", width: 15 },
+        { header: "Date", key: "date", width: 25 },
+      ];
+
+      // Style the header row
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE6F0FF" },
+      };
+      headerRow.border = {
+        bottom: { style: "thin" },
+      };
+
+      // Add data rows
+      activities.forEach((activity) => {
+        worksheet.addRow({
+          type: getActivityTypeName(activity.type),
+          details: getActivityMessage(activity),
+          user: activity.userName || "",
+          book: activity.bookTitle || "",
+          status: activity.status || "",
+          date: new Date(activity.timestamp).toLocaleString(),
+        });
+      });
+
+      // Apply conditional formatting based on activity type
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1) {
+          // Skip header row
+          const activityType = row.getCell("type").value;
+          let color = "FFFFFFFF"; // Default white
+
+          switch (activityType) {
+            case "User Registration":
+              color = "FFF0F8FF"; // Light blue
+              break;
+            case "Book Added":
+              color = "FFF0FFF0"; // Light green
+              break;
+            case "Book Borrowed":
+              color = "FFF5F0FF"; // Light purple
+              break;
+            case "Account Request":
+              color = "FFFFF0E6"; // Light amber
+              break;
+          }
+
+          row.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: color },
+          };
+        }
+
+        // Align cells
+        row.alignment = { vertical: "middle" };
+      });
+
+      // Generate the Excel file
+      const buffer = await workbook.xlsx.writeBuffer();
+
+      // Create a Blob from the buffer
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      // Save the file
+      saveAs(blob, "activity-log.xlsx");
+
+      toast({
+        title: "Export Successful",
+        description: "Activity log has been exported successfully.",
+      });
+    } catch (error) {
+      console.error("Error exporting activities:", error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting the activity log.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Fetch activities on component mount
   useEffect(() => {
     fetchActivities();
@@ -198,15 +330,29 @@ const ActivitiesPage = () => {
           <h2 className="text-xl font-semibold">Activity Log</h2>
         </div>
 
-        <Button
-          onClick={handleRefresh}
-          variant="outline"
-          className="flex items-center gap-2"
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          {loading ? "Refreshing..." : "Refresh"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            className="flex items-center gap-2"
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {loading ? "Refreshing..." : "Refresh"}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            className="flex items-center gap-2"
+            disabled={loading || exporting || activities.length === 0}
+          >
+            <Download
+              className={`h-4 w-4 ${exporting ? "animate-pulse" : ""}`}
+            />
+            {exporting ? "Exporting..." : "Export List"}
+          </Button>
+        </div>
       </div>
 
       {loading ? (
