@@ -10,6 +10,7 @@ import {
   BookOpen,
   Filter as FilterIcon,
   X,
+  Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -268,46 +269,64 @@ const BrowseLibraryPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Browse Library</h1>
-          <p className="mt-1 text-gray-600">Explore our collection by genre</p>
-        </div>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-12">
+      <div className="mb-8 bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 sm:p-8 shadow-md">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-lg bg-white/20 flex items-center justify-center shadow-sm backdrop-blur-sm">
+              <Library className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                Browse Library
+              </h1>
+              <p className="mt-1 text-white">
+                Discover your next favorite book
+              </p>
+            </div>
+          </div>
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 md:hidden"
-          >
-            <FilterIcon className="h-4 w-4" />
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
-                {activeFilterCount}
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 md:hidden border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+            >
+              <FilterIcon className="h-4 w-4 text-gray-600" />
+              <span className="text-gray-800">Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white font-medium">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              disabled={loading}
+              className="flex items-center gap-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+            >
+              <RefreshCw
+                className={`h-4 w-4 text-gray-600 ${loading ? "animate-spin" : ""}`}
+              />
+              <span className="text-gray-800">
+                {loading ? "Refreshing..." : "Refresh"}
               </span>
-            )}
-          </Button>
-
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            disabled={loading}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            {loading ? "Refreshing..." : "Refresh"}
-          </Button>
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-6 md:flex-row">
+      <div className="flex flex-col gap-8 md:flex-row">
         {/* Genre Sidebar - Desktop */}
-        <div className="hidden md:block w-48 flex-shrink-0 lg:w-64">
-          <div className="mb-4 text-lg font-semibold text-gray-800">Genres</div>
+        <div className="hidden md:block w-56 flex-shrink-0 lg:w-64">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="h-6 w-1 bg-white rounded-full"></div>
+            <h2 className="text-lg font-semibold text-white">Genres</h2>
+          </div>
 
-          <div className="space-y-1 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="space-y-1.5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             {loading && !genres.length ? (
               <div className="flex justify-center py-8">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
@@ -320,10 +339,10 @@ const BrowseLibraryPage = () => {
                     fetchAllBooks(filters);
                   }}
                   className={cn(
-                    "w-full rounded-md px-4 py-2 text-left text-sm transition-colors",
+                    "w-full rounded-md px-4 py-2.5 text-left text-sm font-medium transition-all",
                     selectedGenre === null
-                      ? "bg-primary text-white"
-                      : "hover:bg-gray-100"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-gray-700 hover:bg-gray-100"
                   )}
                 >
                   All Books
@@ -334,10 +353,10 @@ const BrowseLibraryPage = () => {
                     key={genre}
                     onClick={() => handleGenreClick(genre)}
                     className={cn(
-                      "w-full rounded-md px-4 py-2 text-left text-sm transition-colors",
+                      "w-full rounded-md px-4 py-2.5 text-left text-sm font-medium transition-all",
                       selectedGenre === genre
-                        ? "bg-primary text-white"
-                        : "hover:bg-gray-100"
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-gray-700 hover:bg-gray-100"
                     )}
                   >
                     {genre}
@@ -347,7 +366,7 @@ const BrowseLibraryPage = () => {
                 {hasMoreGenres && (
                   <button
                     onClick={() => setShowAllGenres(!showAllGenres)}
-                    className="mt-2 flex w-full items-center justify-center gap-1 rounded-md py-2 text-xs text-blue-600 hover:bg-blue-50"
+                    className="mt-3 flex w-full items-center justify-center gap-1 rounded-md py-2 text-xs text-primary hover:bg-gray-50"
                   >
                     {showAllGenres ? (
                       <>
@@ -383,14 +402,16 @@ const BrowseLibraryPage = () => {
             onClick={() => setShowFilters(false)}
           >
             <div
-              className="absolute bottom-0 left-0 right-0 max-h-[80vh] overflow-auto rounded-t-xl bg-white p-4"
+              className="absolute bottom-0 left-0 right-0 max-h-[80vh] overflow-auto rounded-t-xl bg-white p-4 shadow-lg"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-medium">Browse By Genre</h3>
+                <h3 className="text-lg font-medium text-primary">
+                  Browse By Genre
+                </h3>
                 <button
                   onClick={() => setShowFilters(false)}
-                  className="rounded-full p-2 hover:bg-gray-100"
+                  className="rounded-full p-2 hover:bg-gray-100 text-gray-500"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -404,10 +425,10 @@ const BrowseLibraryPage = () => {
                     setShowFilters(false);
                   }}
                   className={cn(
-                    "rounded-full px-3 py-1 text-sm",
+                    "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
                     selectedGenre === null
-                      ? "bg-primary text-white"
-                      : "bg-gray-100 hover:bg-gray-200"
+                      ? "bg-primary text-white shadow-sm"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                   )}
                 >
                   All Books
@@ -420,10 +441,10 @@ const BrowseLibraryPage = () => {
                       handleGenreClick(genre);
                     }}
                     className={cn(
-                      "rounded-full px-3 py-1 text-sm",
+                      "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
                       selectedGenre === genre
-                        ? "bg-primary text-white"
-                        : "bg-gray-100 hover:bg-gray-200"
+                        ? "bg-primary text-white shadow-sm"
+                        : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                     )}
                   >
                     {genre}
@@ -450,7 +471,7 @@ const BrowseLibraryPage = () => {
               </div>
             </div>
           ) : error ? (
-            <div className="flex h-[50vh] flex-col items-center justify-center rounded-lg border border-red-200 bg-red-50 p-8">
+            <div className="flex h-[50vh] flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50 p-8">
               <p className="text-lg font-medium text-red-600">{error}</p>
               <Button onClick={handleRefresh} className="mt-4">
                 Try Again
@@ -459,20 +480,27 @@ const BrowseLibraryPage = () => {
           ) : books.length > 0 ? (
             <div>
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <h2 className="text-2xl font-semibold text-gray-800">
-                  {selectedGenre || "All Books"}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-1 bg-white rounded-full"></div>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-white">
+                    {selectedGenre || "All Books"}
+                  </h2>
+                </div>
 
-                <p className="text-sm text-gray-500">
-                  Showing {books.length} {books.length === 1 ? "book" : "books"}
-                  {activeFilterCount > 0 && " (filtered)"}
+                <p className="text-sm text-white">
+                  Showing{" "}
+                  <span className="font-medium text-white">{books.length}</span>{" "}
+                  {books.length === 1 ? "book" : "books"}
+                  {activeFilterCount > 0 && (
+                    <span className="text-white/80"> (filtered)</span>
+                  )}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {books.map((book) => (
                   <div key={book.id} className="flex justify-center">
-                    <div className="w-full max-w-[200px]">
+                    <div className="w-full max-w-[220px] transform hover:scale-[1.03] hover:shadow-md transition-all duration-200 rounded-lg">
                       <BookCard
                         id={book.id}
                         title={book.title}
@@ -494,9 +522,9 @@ const BrowseLibraryPage = () => {
               </div>
             </div>
           ) : (
-            <div className="flex h-[50vh] flex-col items-center justify-center rounded-lg border border-gray-200 bg-gray-50 p-8">
+            <div className="flex h-[50vh] flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 p-8">
               <BookOpen className="h-12 w-12 text-gray-300" />
-              <p className="mt-4 text-lg font-medium text-gray-600">
+              <p className="mt-4 text-lg font-medium text-gray-700">
                 No books found {selectedGenre ? `for ${selectedGenre}` : ""}
               </p>
               <p className="mt-2 text-gray-500">
@@ -507,10 +535,10 @@ const BrowseLibraryPage = () => {
                 <Button
                   variant="outline"
                   onClick={handleClearFilters}
-                  className="mt-4"
+                  className="mt-4 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 >
-                  <X className="mr-2 h-4 w-4" />
-                  Clear Filters
+                  <X className="mr-2 h-4 w-4 text-gray-500" />
+                  <span className="text-gray-700">Clear Filters</span>
                 </Button>
               )}
             </div>

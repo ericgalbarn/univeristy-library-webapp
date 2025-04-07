@@ -3,7 +3,15 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Check, SortAsc, SortDesc, Star, Filter, X } from "lucide-react";
+import {
+  Check,
+  SortAsc,
+  SortDesc,
+  Star,
+  Filter,
+  X,
+  Sliders,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type FilterOptions = {
@@ -112,27 +120,30 @@ const BrowseFilters = ({
   return (
     <div
       className={cn(
-        "rounded-lg border border-gray-200 bg-white p-4",
+        "rounded-xl border border-gray-200 bg-white p-4 shadow-sm",
         className
       )}
     >
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-800">Filter Books</h3>
+        <div className="flex items-center gap-2">
+          <Sliders className="h-5 w-5 text-gray-600" />
+          <h3 className="text-lg font-medium text-gray-900">Filter Books</h3>
+        </div>
 
         {hasActiveFilters && (
           <button
             onClick={handleClear}
-            className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600"
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
           >
             <X className="h-4 w-4" />
-            Clear Filters
+            Clear
           </button>
         )}
       </div>
 
       {/* Search filter */}
       <div className="mb-4">
-        <label className="mb-1 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">
           Search
         </label>
         <div className="relative">
@@ -141,16 +152,16 @@ const BrowseFilters = ({
             placeholder="Search by title or author"
             value={filters.search}
             onChange={(e) => handleChange("search", e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
       </div>
 
-      <Separator className="my-4" />
+      <Separator className="my-4 bg-gray-200" />
 
       {/* Sort Options */}
       <div className="mb-4">
-        <label className="mb-2 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">
           Sort By
         </label>
 
@@ -158,7 +169,7 @@ const BrowseFilters = ({
           <select
             value={filters.sortBy}
             onChange={(e) => handleChange("sortBy", e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
             <option value="createdAt">Date Added</option>
             <option value="title">Title</option>
@@ -167,14 +178,14 @@ const BrowseFilters = ({
             <option value="availableCopies">Availability</option>
           </select>
 
-          <div className="flex rounded-md border border-gray-300">
+          <div className="flex rounded-md border border-gray-300 shadow-sm">
             <button
               type="button"
               className={cn(
-                "flex flex-1 items-center justify-center gap-1 py-2 text-sm",
+                "flex flex-1 items-center justify-center gap-1 py-2 text-sm font-medium transition-colors",
                 filters.sortOrder === "asc"
                   ? "bg-primary text-white"
-                  : "hover:bg-gray-50"
+                  : "hover:bg-gray-50 text-gray-700"
               )}
               onClick={() => handleChange("sortOrder", "asc")}
             >
@@ -185,10 +196,10 @@ const BrowseFilters = ({
             <button
               type="button"
               className={cn(
-                "flex flex-1 items-center justify-center gap-1 py-2 text-sm",
+                "flex flex-1 items-center justify-center gap-1 py-2 text-sm font-medium transition-colors",
                 filters.sortOrder === "desc"
                   ? "bg-primary text-white"
-                  : "hover:bg-gray-50"
+                  : "hover:bg-gray-50 text-gray-700"
               )}
               onClick={() => handleChange("sortOrder", "desc")}
             >
@@ -199,11 +210,11 @@ const BrowseFilters = ({
         </div>
       </div>
 
-      <Separator className="my-4" />
+      <Separator className="my-4 bg-gray-200" />
 
       {/* Rating filter */}
       <div className="mb-4">
-        <label className="mb-2 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">
           Rating
         </label>
 
@@ -212,12 +223,12 @@ const BrowseFilters = ({
             <button
               key={rating === null ? "any" : rating}
               className={cn(
-                "flex items-center rounded-full px-3 py-1 text-sm",
+                "flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
                 (rating === filters.minRating &&
                   rating === filters.maxRating) ||
                   (rating === null && filters.minRating === null)
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 hover:bg-gray-200"
+                  ? "bg-primary text-white shadow-sm"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-800"
               )}
               onClick={() => handleRatingChange(rating)}
             >
@@ -231,11 +242,11 @@ const BrowseFilters = ({
         </div>
       </div>
 
-      <Separator className="my-4" />
+      <Separator className="my-4 bg-gray-200" />
 
       {/* Availability filter */}
       <div className="mb-4">
-        <label className="mb-2 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">
           Availability
         </label>
 
@@ -248,10 +259,10 @@ const BrowseFilters = ({
             <button
               key={option.value === null ? "all" : option.value}
               className={cn(
-                "rounded-full px-3 py-1 text-sm",
+                "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
                 filters.availability === option.value
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 hover:bg-gray-200"
+                  ? "bg-primary text-white shadow-sm"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-800"
               )}
               onClick={() => handleChange("availability", option.value)}
             >
@@ -261,10 +272,14 @@ const BrowseFilters = ({
         </div>
       </div>
 
-      <Separator className="my-4" />
+      <Separator className="my-4 bg-gray-200" />
 
       {/* Apply button */}
-      <Button onClick={handleApply} disabled={!hasChanges} className="w-full">
+      <Button
+        onClick={handleApply}
+        disabled={!hasChanges}
+        className="w-full bg-primary hover:bg-primary/90 transition-colors"
+      >
         <Filter className="mr-2 h-4 w-4" />
         Apply Filters
       </Button>
