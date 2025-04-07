@@ -7,6 +7,7 @@ import {
   timestamp,
   pgEnum,
   date,
+  serial,
 } from "drizzle-orm/pg-core";
 
 export const STATUS_ENUM = pgEnum("status", [
@@ -68,4 +69,16 @@ export const borrowRecords = pgTable("borrow_records", {
   returnDate: date("return_date"),
   status: BORROW_STATUS_ENUM("status").default("BORROWED").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const otpTable = pgTable("otp", {
+  id: serial("id").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  otp: text("otp").notNull(),
+  type: text("type").notNull(), // PASSWORD_RESET, EMAIL_VERIFICATION, etc.
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
