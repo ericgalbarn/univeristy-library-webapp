@@ -79,11 +79,20 @@ export async function POST(req: NextRequest) {
     });
 
     // Return the token to be encoded in QR code
-    return NextResponse.json({
-      success: true,
-      token,
-      expiresAt,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        token,
+        expiresAt,
+      },
+      {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error generating QR code:", error);
     return NextResponse.json(

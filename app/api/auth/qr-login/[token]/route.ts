@@ -71,7 +71,13 @@ export async function GET(
       .where(eq(qrLoginSessions.token, token));
 
     // Display success page
-    return NextResponse.redirect(new URL("/qr-success", baseUrl));
+    return NextResponse.redirect(new URL("/qr-success", baseUrl), {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
   } catch (error) {
     console.error("Error processing QR code login:", error);
     return NextResponse.redirect(
