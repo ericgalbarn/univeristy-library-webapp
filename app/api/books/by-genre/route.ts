@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
       ? parseInt(url.searchParams.get("maxRating")!)
       : null;
     const availability = url.searchParams.get("availability"); // "all", "available", "unavailable"
+    const firstLetter = url.searchParams.get("firstLetter"); // New parameter for A-Z filtering
 
     // Validate sort parameters
     const sortBy = validSortFields.includes(sortByParam)
@@ -100,6 +101,13 @@ export async function GET(req: NextRequest) {
           sql`LOWER(${books.title}) LIKE LOWER(${`%${searchQuery}%`})`,
           sql`LOWER(${books.author}) LIKE LOWER(${`%${searchQuery}%`})`
         )
+      );
+    }
+
+    // First letter filter
+    if (firstLetter) {
+      conditions.push(
+        sql`LOWER(${books.title}) LIKE LOWER(${`${firstLetter}%`})`
       );
     }
 

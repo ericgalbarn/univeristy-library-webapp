@@ -21,6 +21,7 @@ export type FilterOptions = {
   minRating: number | null;
   maxRating: number | null;
   availability: string | null;
+  firstLetter: string | null;
 };
 
 interface BrowseFiltersProps {
@@ -93,6 +94,7 @@ const BrowseFilters = ({
       minRating: null,
       maxRating: null,
       availability: null,
+      firstLetter: null,
     };
 
     setFilters(defaultFilters);
@@ -154,6 +156,87 @@ const BrowseFilters = ({
             onChange={(e) => handleChange("search", e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
+        </div>
+      </div>
+
+      <Separator className="my-4 bg-gray-200" />
+
+      {/* A-Z Navigation */}
+      <div className="mb-4">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          A - Z
+        </label>
+        <div className="relative mt-6">
+          <div className="relative h-2 w-full">
+            {/* Track line */}
+            <div className="absolute inset-0 h-0.5 w-full bg-gray-200 rounded-full" />
+
+            {/* Active track */}
+            <div
+              className="absolute inset-0 h-0.5 bg-primary rounded-full transition-all duration-300"
+              style={{
+                width: `${((filters.firstLetter ? filters.firstLetter.charCodeAt(0) - 65 : 0) / 25) * 100}%`,
+              }}
+            />
+
+            {/* Slider input */}
+            <input
+              type="range"
+              min="0"
+              max="25"
+              value={
+                filters.firstLetter ? filters.firstLetter.charCodeAt(0) - 65 : 0
+              }
+              onChange={(e) => {
+                const letter = String.fromCharCode(
+                  65 + parseInt(e.target.value)
+                );
+                handleChange("firstLetter", letter);
+                // Apply filters immediately when letter changes
+                onApplyFilters({ ...filters, firstLetter: letter });
+              }}
+              className="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:hover:shadow-xl [&::-webkit-slider-thumb]:active:scale-95"
+            />
+
+            {/* Current letter indicator */}
+            <div
+              className={cn(
+                "absolute -top-8 left-1/2 transform -translate-x-1/2 transition-all duration-300",
+                filters.firstLetter ? "opacity-100" : "opacity-0"
+              )}
+              style={{
+                left: `${((filters.firstLetter ? filters.firstLetter.charCodeAt(0) - 65 : 0) / 25) * 100}%`,
+              }}
+            >
+              <div className="bg-primary text-white text-sm font-medium px-2.5 py-1 rounded-md shadow-sm">
+                {filters.firstLetter || "A"}
+              </div>
+            </div>
+
+            {/* Edge letters */}
+            <div className="absolute -bottom-6 left-0 text-xs font-medium text-gray-500">
+              A
+            </div>
+            <div className="absolute -bottom-6 right-0 text-xs font-medium text-gray-500">
+              Z
+            </div>
+          </div>
+
+          {/* Status message */}
+          <div className="mt-8 text-center">
+            <div
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full bg-primary/5 px-4 py-2 text-sm font-medium text-primary transition-all duration-300",
+                filters.firstLetter
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-2"
+              )}
+            >
+              {filters.firstLetter
+                ? `Showing books starting with "${filters.firstLetter}"`
+                : "Slide to filter books by letter"}
+            </div>
+          </div>
         </div>
       </div>
 

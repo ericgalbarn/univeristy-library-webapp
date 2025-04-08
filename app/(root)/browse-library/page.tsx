@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
 
 type GenreWithBooks = {
   genre: string;
@@ -38,7 +39,11 @@ const BrowseLibraryPage = () => {
     minRating: null,
     maxRating: null,
     availability: null,
+    firstLetter: null,
   });
+
+  // Add debounce for filters
+  const debouncedFilters = useDebounce(filters, 300);
 
   const MAX_SIDEBAR_GENRES = 10;
   const displayedGenres = showAllGenres
@@ -61,12 +66,14 @@ const BrowseLibraryPage = () => {
     fetchAllBooks(filters);
   }, []);
 
-  // When a genre is selected, fetch books for that genre
+  // When filters change, fetch books
   useEffect(() => {
     if (selectedGenre) {
-      fetchBooksByGenre(selectedGenre, filters);
+      fetchBooksByGenre(selectedGenre, debouncedFilters);
+    } else {
+      fetchAllBooks(debouncedFilters);
     }
-  }, [selectedGenre, filters]);
+  }, [selectedGenre, debouncedFilters]);
 
   const fetchGenres = async () => {
     try {
@@ -124,6 +131,10 @@ const BrowseLibraryPage = () => {
 
       if (filterOptions.availability !== null) {
         params.append("availability", filterOptions.availability);
+      }
+
+      if (filterOptions.firstLetter) {
+        params.append("firstLetter", filterOptions.firstLetter);
       }
 
       const response = await fetch(`/api/books/by-genre?${params.toString()}`);
@@ -187,6 +198,10 @@ const BrowseLibraryPage = () => {
         params.append("availability", filterOptions.availability);
       }
 
+      if (filterOptions.firstLetter) {
+        params.append("firstLetter", filterOptions.firstLetter);
+      }
+
       const response = await fetch(`/api/books/by-genre?${params.toString()}`);
 
       if (!response.ok) {
@@ -242,6 +257,7 @@ const BrowseLibraryPage = () => {
       minRating: null,
       maxRating: null,
       availability: null,
+      firstLetter: null,
     };
 
     setFilters(defaultFilters);
@@ -501,21 +517,7 @@ const BrowseLibraryPage = () => {
                 {books.map((book) => (
                   <div key={book.id} className="flex justify-center">
                     <div className="w-full max-w-[220px] transform hover:scale-[1.03] hover:shadow-md transition-all duration-200 rounded-lg">
-                      <BookCard
-                        id={book.id}
-                        title={book.title}
-                        author={book.author}
-                        genre={book.genre}
-                        description={book.description}
-                        rating={book.rating}
-                        coverUrl={book.coverUrl}
-                        coverColor={book.coverColor}
-                        totalCopies={book.totalCopies}
-                        availableCopies={book.availableCopies}
-                        createdAt={book.createdAt}
-                        videoUrl={book.videoUrl}
-                        summary={book.summary}
-                      />
+                      <BookCard {...book} />
                     </div>
                   </div>
                 ))}
