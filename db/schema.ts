@@ -8,6 +8,7 @@ import {
   pgEnum,
   date,
   serial,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const STATUS_ENUM = pgEnum("status", [
@@ -81,4 +82,13 @@ export const otpTable = pgTable("otp", {
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const qrLoginSessions = pgTable("qr_login_sessions", {
+  id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
+  email: text("email").notNull(),
+  token: text("token").notNull().unique(),
+  verified: boolean("verified").default(false),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
