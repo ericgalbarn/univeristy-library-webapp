@@ -7,6 +7,8 @@ import Header from "@/components/admin/Header";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/db";
+import LoadingWrapper from "@/components/LoadingWrapper";
+
 const Layout = async ({ children }: { children: ReactNode }) => {
   const session = await auth();
 
@@ -22,14 +24,16 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   if (!isAdmin) redirect("/");
 
   return (
-    <main className="flex min-h-screen w-full flex-row">
-      <Sidebar session={session} />
+    <LoadingWrapper>
+      <main className="flex min-h-screen w-full flex-row">
+        <Sidebar session={session} />
 
-      <div className="admin-container">
-        <Header session={session} />
-        {children}
-      </div>
-    </main>
+        <div className="admin-container">
+          <Header session={session} />
+          {children}
+        </div>
+      </main>
+    </LoadingWrapper>
   );
 };
 

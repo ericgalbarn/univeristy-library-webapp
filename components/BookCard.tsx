@@ -10,6 +10,7 @@ import { AlertTriangle, Calendar, Clock, Heart } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 import { useSession } from "next-auth/react";
 import AddToBorrowCartButton from "./AddToBorrowCartButton";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
 interface BookCardProps extends Book {
   showDueDate?: boolean;
@@ -39,6 +40,19 @@ const BookCard = ({
   const [isLoading, setIsLoading] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Motion values for natural, fluid animations
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  // Add spring physics for more natural movement
+  const springConfig = { stiffness: 300, damping: 25 };
+  const xSpring = useSpring(x, springConfig);
+  const ySpring = useSpring(y, springConfig);
+
+  // Define transform hooks at component level to fix hook order issues
+  const rotateYTransform = useTransform(xSpring, [-3, 3], [-5, 5]);
+  const rotateXTransform = useTransform(ySpring, [-5, 5], [2, -2]);
 
   // Format the due date to a readable string
   const formattedDueDate = dueDate
@@ -81,30 +95,24 @@ const BookCard = ({
 
   // Toggle favorite status
   const toggleFavorite = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent Link navigation
+    e.preventDefault();
+    e.stopPropagation();
 
     if (!session?.user) {
       toast({
         title: "Authentication required",
-        description: "Please sign in to add books to favorites",
+        description: "Please sign in to add books to your favorites.",
         variant: "destructive",
       });
       return;
     }
 
-    // Clear any existing animation timeout
-    if (animationTimeoutRef.current) {
-      clearTimeout(animationTimeoutRef.current);
-      animationTimeoutRef.current = null;
-    }
-
-    // Generate new animation key to force re-render and restart animation
-    setAnimationKey((prev) => prev + 1);
     setIsLoading(true);
 
     try {
+      const method = isFavorite ? "DELETE" : "POST";
       const response = await fetch("/api/books/favorite", {
-        method: "POST",
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -114,30 +122,57 @@ const BookCard = ({
       const data = await response.json();
 
       if (data.success) {
-        setIsFavorite(data.favorited);
+        setIsFavorite(!isFavorite);
+        setAnimationKey((prev) => prev + 1); // Trigger animation
+
+        // Clear any existing animation timeout
+        if (animationTimeoutRef.current) {
+          clearTimeout(animationTimeoutRef.current);
+        }
+
+        // Set a timeout to trigger another animation key update when the animation should end
+        animationTimeoutRef.current = setTimeout(() => {
+          setAnimationKey((prev) => prev + 1);
+        }, 800); // Match this to your animation duration
+
         toast({
-          title: data.favorited
-            ? "Added to favorites"
-            : "Removed from favorites",
-          description: data.message,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to update favorites",
-          variant: "destructive",
+          title: isFavorite ? "Removed from favorites" : "Added to favorites",
+          description: isFavorite
+            ? `${title} has been removed from your favorites.`
+            : `${title} has been added to your favorites.`,
         });
       }
     } catch (error) {
       console.error("Error toggling favorite status:", error);
       toast({
         title: "Error",
-        description: "Failed to update favorites",
+        description: "Something went wrong, please try again later.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Mouse movement handlers for 3D effect
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    // Calculate distance from center (normalized to -1 to 1)
+    const moveX = (e.clientX - centerX) / (rect.width / 2);
+    const moveY = (e.clientY - centerY) / (rect.height / 2);
+
+    // Apply subtle movement
+    x.set(moveX * 3);
+    y.set(moveY * -5);
+  };
+
+  // Reset position when mouse leaves
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
   };
 
   return (
@@ -146,8 +181,28 @@ const BookCard = ({
         href={`/books/${id}`}
         className={cn(isLoanedBook && "w-full flex flex-col items-center")}
       >
-        <div className="relative">
-          <BookCover coverColor={coverColor} coverImage={coverUrl} />
+        <motion.div
+          className="relative perspective-container"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          whileHover={{ scale: 1.05 }}
+          transition={{
+            scale: {
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+            },
+          }}
+        >
+          <motion.div
+            className="will-change-transform"
+            style={{
+              rotateY: rotateYTransform,
+              rotateX: rotateXTransform,
+            }}
+          >
+            <BookCover coverColor={coverColor} coverImage={coverUrl} />
+          </motion.div>
 
           {/* Heart icon for favoriting */}
           <div className="absolute top-2 right-2 z-20">
@@ -177,7 +232,7 @@ const BookCard = ({
               </span>
             </button>
           </div>
-        </div>
+        </motion.div>
 
         <div className={cn("mt-4", !isLoanedBook && "xs:max-w-40 max-w-28")}>
           <p className="book-title">{title}</p>

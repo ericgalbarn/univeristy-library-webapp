@@ -36,6 +36,68 @@
     @apply w-full min-h-14 border-none text-base font-bold placeholder:font-normal text-white placeholder:text-light-100 focus-visible:ring-0 focus-visible:shadow-none bg-dark-300 !important;
   }
 
+  /* Loading and Animation Styles */
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  .loading-dots div {
+    @apply bg-primary rounded-full;
+    animation: bounce 1.4s infinite ease-in-out both;
+  }
+
+  .loading-dots div:nth-child(1) {
+    animation-delay: -0.32s;
+  }
+
+  .loading-dots div:nth-child(2) {
+    animation-delay: -0.16s;
+  }
+
+  @keyframes bounce {
+    0%,
+    80%,
+    100% {
+      transform: scale(0);
+    }
+    40% {
+      transform: scale(1);
+    }
+  }
+
+  /* Page transition animation */
+  .page-transition-enter {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  .page-transition-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+      opacity 400ms,
+      transform 400ms;
+  }
+
+  .page-transition-exit {
+    opacity: 1;
+  }
+
+  .page-transition-exit-active {
+    opacity: 0;
+    transition: opacity 300ms;
+  }
+
   /* Book Card */
   .book-title {
     @apply mt-2 line-clamp-1 text-base font-semibold text-white xs:text-xl;
@@ -83,9 +145,35 @@
     @apply xs:w-[296px] w-[256px] xs:h-[404px] h-[354px];
   }
 
+  /* Interactive Book Cover Effects */
+  .book-overview .book-cover_wide,
+  .book-list .book-cover_regular {
+    @apply transition-all duration-700 ease-in-out will-change-transform;
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.15));
+    backface-visibility: hidden;
+  }
+
+  .book-overview .book-cover_wide:hover,
+  .book-list .book-cover_regular:hover {
+    filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.2));
+  }
+
+  /* 3D effects */
+  .perspective-container {
+    @apply relative;
+    transform-style: preserve-3d;
+    perspective: 1200px;
+    isolation: isolate; /* Creates a new stacking context */
+  }
+
   /* Book List */
   .book-list {
     @apply mt-10 flex flex-wrap gap-5 max-xs:justify-between xs:gap-10;
+  }
+
+  /* Book Card in List */
+  .book-list li {
+    @apply transition-transform duration-700 ease-in-out;
   }
 
   /* Book Overview */
@@ -280,6 +368,12 @@
 
   .library-title {
     @apply mt-2 text-3xl font-semibold text-white xs:text-5xl;
+  }
+
+  /* 3D Effect Utilities */
+  .will-change-transform {
+    will-change: transform;
+    transform: translateZ(0);
   }
 }
 

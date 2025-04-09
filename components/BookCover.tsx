@@ -31,22 +31,33 @@ const BookCover = ({
   return (
     <div
       className={cn(
-        "relative transition-all duration-300",
+        "relative transition-all duration-500 group",
         variantStyles[variant],
         className
       )}
     >
+      <div
+        className="absolute inset-0 bg-primary/10 opacity-0 rounded-sm blur-lg group-hover:opacity-30 transition-all duration-500 ease-in-out"
+        style={{
+          backgroundColor: `${coverColor}30`,
+          transform: "translateY(10%) scale(0.95)",
+        }}
+      />
       <BookCoverSvg coverColor={coverColor} />
       <div
         className="absolute z-10"
         style={{ left: "12%", width: "87.5%", height: "88%" }}
       >
+        <div
+          className="absolute inset-0 w-full h-full"
+          style={{ backgroundColor: coverColor }}
+        />
         <IKImage
           path={coverImage}
           urlEndpoint={config.env.imagekit.urlEndpoint}
           alt="Book Cover"
           fill
-          className="rounded-sm object-fill"
+          className="rounded-sm object-fill transition-transform duration-700 ease-out group-hover:scale-[1.01]"
           loading="lazy"
           lqip={{ active: true }}
         />
