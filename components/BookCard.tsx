@@ -9,6 +9,7 @@ import { Button } from "./ui/button";
 import { AlertTriangle, Calendar, Clock, Heart } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 import { useSession } from "next-auth/react";
+import AddToBorrowCartButton from "./AddToBorrowCartButton";
 
 interface BookCardProps extends Book {
   showDueDate?: boolean;
@@ -16,11 +17,13 @@ interface BookCardProps extends Book {
   daysUntilDue?: number;
   isOverdue?: boolean;
   isLoanedBook?: boolean;
+  author: string;
 }
 
 const BookCard = ({
   id,
   title,
+  author,
   genre,
   coverColor,
   coverUrl,
@@ -180,41 +183,52 @@ const BookCard = ({
           <p className="book-title">{title}</p>
           <p className="book-genre">{genre}</p>
         </div>
-
-        {(isLoanedBook || showDueDate) && dueDate && (
-          <div className="mt-3 w-full">
-            <div
-              className={cn(
-                "book-loaned flex items-center gap-2 p-2 rounded-md",
-                isOverdue
-                  ? "bg-red-50 text-red-700"
-                  : daysUntilDue && daysUntilDue < 3
-                    ? "bg-amber-50 text-amber-700"
-                    : "bg-gray-50 text-gray-700"
-              )}
-            >
-              {isOverdue ? (
-                <AlertTriangle className="h-4 w-4" />
-              ) : (
-                <Calendar className="h-4 w-4" />
-              )}
-
-              <div className="flex flex-col text-xs">
-                <p className="font-medium">
-                  {isOverdue
-                    ? `Overdue by ${Math.abs(daysUntilDue || 0)} days`
-                    : `${daysUntilDue !== undefined ? daysUntilDue : 0} days left to return`}
-                </p>
-                <p className="text-xs opacity-80">Due: {formattedDueDate}</p>
-              </div>
-            </div>
-
-            <Button variant="outline" className="book-btn mt-2 w-full text-xs">
-              Download receipt
-            </Button>
-          </div>
-        )}
       </Link>
+
+      {/* Add to Borrow Cart button */}
+      <div className="mt-3">
+        <AddToBorrowCartButton
+          book={{ id, title, author, coverUrl, coverColor }}
+          size="sm"
+          variant="outline"
+          className="w-full text-xs"
+        />
+      </div>
+
+      {(isLoanedBook || showDueDate) && dueDate && (
+        <div className="mt-3 w-full">
+          <div
+            className={cn(
+              "book-loaned flex items-center gap-2 p-2 rounded-md",
+              isOverdue
+                ? "bg-red-50 text-red-700"
+                : daysUntilDue && daysUntilDue < 3
+                  ? "bg-amber-50 text-amber-700"
+                  : "bg-gray-50 text-gray-700"
+            )}
+          >
+            {isOverdue ? (
+              <AlertTriangle className="h-4 w-4" />
+            ) : (
+              <Calendar className="h-4 w-4" />
+            )}
+
+            <div className="flex flex-col text-xs">
+              <p className="font-medium">
+                {isOverdue
+                  ? `Overdue by ${Math.abs(daysUntilDue || 0)} days`
+                  : `${daysUntilDue !== undefined ? daysUntilDue : 0} days left to return`}
+              </p>
+              <p className="text-xs opacity-80">Due: {formattedDueDate}</p>
+            </div>
+          </div>
+
+          <Button variant="outline" className="book-btn mt-2 w-full text-xs">
+            Download receipt
+          </Button>
+        </div>
+      )}
+
       <style jsx global>{`
         @keyframes buttonBounce {
           0%,

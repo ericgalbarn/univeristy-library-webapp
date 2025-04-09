@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import Header from "@/components/Header";
+import { BorrowCartProvider } from "@/lib/BorrowCartContext";
 import { db } from "@/db/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -34,12 +35,14 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   });
 
   return (
-    <main className="root-container">
-      <div className="mx-auto max-w-7xl w-full my-10">
-        <Header session={session} />
-      </div>
-      <div className="mt-10 pb-20">{children}</div>
-    </main>
+    <BorrowCartProvider>
+      <main className="root-container">
+        <div className="mx-auto max-w-7xl w-full my-10">
+          <Header session={session} />
+        </div>
+        <div className="mt-10 pb-20">{children}</div>
+      </main>
+    </BorrowCartProvider>
   );
 };
 

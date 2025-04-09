@@ -1,18 +1,22 @@
+"use client";
+
 import Image from "next/image";
 import React from "react";
 
 import BookCover from "./BookCover";
 import BorrowBook from "./BorrowBook";
-import { db } from "@/db/db";
-import { eq } from "drizzle-orm";
-import { users } from "@/db/schema";
 import FavoriteButton from "./FavoriteButton";
+import AddToBorrowCartButton from "./AddToBorrowCartButton";
 
 interface Props extends Book {
   userId: string;
+  borrowingEligibility: {
+    isEligible: boolean;
+    message: string;
+  };
 }
 
-const BookOverview = async ({
+const BookOverview = ({
   title,
   author,
   genre,
@@ -24,43 +28,8 @@ const BookOverview = async ({
   coverUrl,
   id,
   userId,
+  borrowingEligibility,
 }: Props) => {
-  // Default borrowing eligibility - if no user ID or not logged in
-  let borrowingEligibility = {
-    isEligible: false,
-    message: "You need to log in to borrow books",
-  };
-
-  let user = null;
-
-  // Only query user if userId is provided
-  if (userId) {
-    try {
-      const userResults = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-      user = userResults.length > 0 ? userResults[0] : null;
-
-      // Update borrowing eligibility based on user status and book availability
-      if (user) {
-        borrowingEligibility = {
-          isEligible: availableCopies > 0 && user.status === "APPROVED",
-          message:
-            availableCopies <= 0
-              ? "Book is not available"
-              : user.status !== "APPROVED"
-                ? "Your account is not approved for borrowing yet"
-                : "You are eligible to borrow this book",
-        };
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  }
-
   return (
     <section className="book-overview">
       <div className="flex flex-1 flex-col gap-5">
@@ -100,6 +69,12 @@ const BookOverview = async ({
               borrowingEligibility={borrowingEligibility}
             />
           )}
+
+          {/* Add to Borrow Cart button */}
+          <AddToBorrowCartButton
+            book={{ id, title, author, coverUrl, coverColor }}
+            size="default"
+          />
 
           {/* Add favorite button */}
           <FavoriteButton bookId={id} size="lg" />

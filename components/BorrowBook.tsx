@@ -11,7 +11,7 @@ import { BookOpen } from "lucide-react";
 interface Props {
   userId: string;
   bookId: string;
-  borrowingEligibility: {
+  borrowingEligibility?: {
     isEligible: boolean;
     message: string;
   };
@@ -19,10 +19,16 @@ interface Props {
 const BorrowBook = ({
   userId,
   bookId,
-  borrowingEligibility: { isEligible, message },
+  borrowingEligibility = {
+    isEligible: false,
+    message: "Unable to determine eligibility",
+  },
 }: Props) => {
   const router = useRouter();
   const [borrowing, setBorrowing] = useState(false);
+
+  // Destructure borrowingEligibility after providing default
+  const { isEligible, message } = borrowingEligibility;
 
   const handleBorrowBook = async () => {
     if (!isEligible) {
@@ -31,6 +37,7 @@ const BorrowBook = ({
         description: message,
         variant: "destructive",
       });
+      return; // Add return here to prevent borrowing if not eligible
     }
 
     setBorrowing(true);
@@ -48,7 +55,8 @@ const BorrowBook = ({
       } else {
         toast({
           title: "Error",
-          description: "An error occurred while borrowing the book.",
+          description:
+            result.error || "An error occurred while borrowing the book.",
           variant: "destructive",
         });
       }
@@ -66,7 +74,7 @@ const BorrowBook = ({
     <Button
       className="book-overview-btn"
       onClick={handleBorrowBook}
-      disabled={borrowing}
+      disabled={borrowing || !isEligible}
     >
       <BookOpen className="h-5 w-5 mr-2" />
       <p className="font-bebas-neue text-xl text-dark-100">
