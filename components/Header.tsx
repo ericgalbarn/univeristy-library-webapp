@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { Session } from "next-auth";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Heart } from "lucide-react";
 
 const Header = ({ session }: { session: Session }) => {
   const userName = session?.user?.name || "User";
@@ -23,19 +23,26 @@ const Header = ({ session }: { session: Session }) => {
 
       {/* User section and logout */}
       <div className="flex items-center gap-4">
+        <Link href="/browse-library">
+          <Button variant="outline" className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            Browse Library
+          </Button>
+        </Link>
+
+        <Link href="/favorites">
+          <Button variant="outline" className="flex items-center gap-2">
+            <Heart className="h-4 w-4" />
+            Favorites
+          </Button>
+        </Link>
+
         <Link href="/my-profile">
           <Avatar>
             <AvatarFallback className="bg-amber-100">
               {userInitials}
             </AvatarFallback>
           </Avatar>
-        </Link>
-
-        <Link href="/browse-library">
-          <Button variant="outline" className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            Browse Library
-          </Button>
         </Link>
 
         <form

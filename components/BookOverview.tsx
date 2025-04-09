@@ -6,6 +6,7 @@ import BorrowBook from "./BorrowBook";
 import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
 import { users } from "@/db/schema";
+import FavoriteButton from "./FavoriteButton";
 
 interface Props extends Book {
   userId: string;
@@ -90,14 +91,19 @@ const BookOverview = async ({
 
         <p className="book-description">{description}</p>
 
-        {/* Only show borrow button if user is logged in */}
-        {userId && (
-          <BorrowBook
-            bookId={id}
-            userId={userId}
-            borrowingEligibility={borrowingEligibility}
-          />
-        )}
+        <div className="flex items-center gap-4">
+          {/* Only show borrow button if user is logged in */}
+          {userId && (
+            <BorrowBook
+              bookId={id}
+              userId={userId}
+              borrowingEligibility={borrowingEligibility}
+            />
+          )}
+
+          {/* Add favorite button */}
+          <FavoriteButton bookId={id} size="lg" />
+        </div>
       </div>
 
       <div className="relative flex flex-1 justify-center">

@@ -1,35 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
-import BookCover from "./BookCover";
+import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
-import { Button } from "./ui/button";
-import { AlertTriangle, Calendar, Clock, Heart } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 import { useSession } from "next-auth/react";
+import { Button } from "./ui/button";
 
-interface BookCardProps extends Book {
-  showDueDate?: boolean;
-  dueDate?: Date;
-  daysUntilDue?: number;
-  isOverdue?: boolean;
-  isLoanedBook?: boolean;
+interface FavoriteButtonProps {
+  bookId: string;
+  className?: string;
+  size?: "sm" | "md" | "lg";
 }
 
-const BookCard = ({
-  id,
-  title,
-  genre,
-  coverColor,
-  coverUrl,
-  isLoanedBook = false,
-  showDueDate = false,
-  dueDate,
-  daysUntilDue,
-  isOverdue,
-}: BookCardProps) => {
+const FavoriteButton = ({
+  bookId,
+  className,
+  size = "md",
+}: FavoriteButtonProps) => {
   const { toast } = useToast();
   const { data: session } = useSession();
   const [isFavorite, setIsFavorite] = useState(false);
@@ -37,21 +25,26 @@ const BookCard = ({
   const [animationKey, setAnimationKey] = useState(0);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Format the due date to a readable string
-  const formattedDueDate = dueDate
-    ? new Date(dueDate).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
-    : "";
+  // Size variants
+  const sizeStyles = {
+    sm: "h-4 w-4",
+    md: "h-5 w-5",
+    lg: "h-6 w-6",
+  };
+
+  // Container size variants
+  const containerSizeStyles = {
+    sm: "p-1.5",
+    md: "p-2",
+    lg: "p-2.5",
+  };
 
   // Check if book is favorited on component mount
   useEffect(() => {
     if (session?.user) {
       checkFavoriteStatus();
     }
-  }, [session, id]);
+  }, [session, bookId]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -65,7 +58,7 @@ const BookCard = ({
   // Check if book is in user's favorites
   const checkFavoriteStatus = async () => {
     try {
-      const response = await fetch(`/api/books/favorite?bookId=${id}`);
+      const response = await fetch(`/api/books/favorite?bookId=${bookId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -78,7 +71,7 @@ const BookCard = ({
 
   // Toggle favorite status
   const toggleFavorite = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent Link navigation
+    e.preventDefault(); // Prevent any parent link navigation
 
     if (!session?.user) {
       toast({
@@ -105,7 +98,7 @@ const BookCard = ({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ bookId: id }),
+        body: JSON.stringify({ bookId }),
       });
 
       const data = await response.json();
@@ -138,83 +131,35 @@ const BookCard = ({
   };
 
   return (
-    <li className={cn(isLoanedBook && "xs:w-52 w-full")}>
-      <Link
-        href={`/books/${id}`}
-        className={cn(isLoanedBook && "w-full flex flex-col items-center")}
-      >
-        <div className="relative">
-          <BookCover coverColor={coverColor} coverImage={coverUrl} />
-
-          {/* Heart icon for favoriting */}
-          <div className="absolute top-2 right-2 z-20">
-            <button
-              onClick={toggleFavorite}
-              disabled={isLoading}
-              className={cn(
-                "bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-all duration-200 hover:scale-110 hover:shadow-md",
-                `animate-buttonBounce-${animationKey}`,
-                isFavorite && "shadow-rose-100"
-              )}
-              aria-label={
-                isFavorite ? "Remove from favorites" : "Add to favorites"
-              }
-            >
-              <Heart
-                className={cn(
-                  "h-5 w-5 transition-all duration-300",
-                  isFavorite ? "fill-red-500 text-red-500" : "text-gray-400",
-                  `animate-heartPulse-${animationKey}`
-                )}
-              />
-              <span className="absolute inset-0 pointer-events-none">
-                <span
-                  className={`absolute inset-0 rounded-full animate-ripple-${animationKey} bg-red-100 opacity-0`}
-                />
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <div className={cn("mt-4", !isLoanedBook && "xs:max-w-40 max-w-28")}>
-          <p className="book-title">{title}</p>
-          <p className="book-genre">{genre}</p>
-        </div>
-
-        {(isLoanedBook || showDueDate) && dueDate && (
-          <div className="mt-3 w-full">
-            <div
-              className={cn(
-                "book-loaned flex items-center gap-2 p-2 rounded-md",
-                isOverdue
-                  ? "bg-red-50 text-red-700"
-                  : daysUntilDue && daysUntilDue < 3
-                    ? "bg-amber-50 text-amber-700"
-                    : "bg-gray-50 text-gray-700"
-              )}
-            >
-              {isOverdue ? (
-                <AlertTriangle className="h-4 w-4" />
-              ) : (
-                <Calendar className="h-4 w-4" />
-              )}
-
-              <div className="flex flex-col text-xs">
-                <p className="font-medium">
-                  {isOverdue
-                    ? `Overdue by ${Math.abs(daysUntilDue || 0)} days`
-                    : `${daysUntilDue !== undefined ? daysUntilDue : 0} days left to return`}
-                </p>
-                <p className="text-xs opacity-80">Due: {formattedDueDate}</p>
-              </div>
-            </div>
-
-            <Button variant="outline" className="book-btn mt-2 w-full text-xs">
-              Download receipt
-            </Button>
-          </div>
+    <div className="relative">
+      <Button
+        onClick={toggleFavorite}
+        disabled={isLoading}
+        variant="outline"
+        size="icon"
+        className={cn(
+          "bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-all duration-200 relative overflow-hidden",
+          "hover:scale-110 hover:shadow-md",
+          `animate-buttonBounce-${animationKey}`,
+          isFavorite && "shadow-rose-100",
+          className
         )}
-      </Link>
+        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+      >
+        <Heart
+          className={cn(
+            "transition-all duration-300",
+            sizeStyles[size],
+            isFavorite ? "fill-red-500 text-red-500" : "text-gray-400",
+            `animate-heartPulse-${animationKey}`
+          )}
+        />
+        <span className="absolute inset-0 pointer-events-none">
+          <span
+            className={`absolute inset-0 rounded-full animate-ripple-${animationKey} bg-red-100 opacity-0`}
+          />
+        </span>
+      </Button>
       <style jsx global>{`
         @keyframes buttonBounce {
           0%,
@@ -304,8 +249,8 @@ const BookCard = ({
             : "none"};
         }
       `}</style>
-    </li>
+    </div>
   );
 };
 
-export default BookCard;
+export default FavoriteButton;
