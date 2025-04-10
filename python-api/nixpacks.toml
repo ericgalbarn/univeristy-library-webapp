@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["python311", "postgresql"]
+
+[variables]
+PYTHONUNBUFFERED = "1" 
