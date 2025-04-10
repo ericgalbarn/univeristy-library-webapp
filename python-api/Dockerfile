@@ -12,8 +12,9 @@ COPY . .
 # Create models directory (if it doesn't exist)
 RUN mkdir -p models
 
-# Expose the port
-EXPOSE 5000
+# Expose the port (Railway sets PORT env var)
+ENV PORT=5000
+EXPOSE ${PORT}
 
 # Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"] 
+CMD gunicorn --bind 0.0.0.0:${PORT} app:app 
