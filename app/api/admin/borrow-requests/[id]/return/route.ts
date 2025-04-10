@@ -33,7 +33,8 @@ export async function PUT(
       );
     }
 
-    const id = params.id;
+    // Ensure params.id is properly accessed
+    const { id } = params;
 
     // Check if the borrow record exists
     const borrowRecord = await db

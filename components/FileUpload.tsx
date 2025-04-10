@@ -56,6 +56,8 @@ const FileUpload = ({
     filePath: value ?? null,
   });
   const [progress, setProgress] = useState(0);
+  const [videoProcessingAvailable, setVideoProcessingAvailable] =
+    useState(true);
 
   const styles = {
     button:
@@ -78,7 +80,28 @@ const FileUpload = ({
 
   const onSuccess = (res: any) => {
     setFile(res);
-    onFileChange(res.filePath);
+
+    if (type === "video") {
+      onFileChange(res.filePath);
+
+      fetch(`${urlEndpoint}/${res.filePath}`)
+        .then((response) => {
+          if (!response.ok && response.status === 403) {
+            setVideoProcessingAvailable(false);
+            toast({
+              title: "Video processing limited",
+              description:
+                "Video transformation quota exceeded. Video may not play correctly.",
+              variant: "destructive",
+            });
+          }
+        })
+        .catch(() => {
+          setVideoProcessingAvailable(false);
+        });
+    } else {
+      onFileChange(res.filePath);
+    }
 
     toast({
       title: `${type} uploaded successfully`,
@@ -186,11 +209,24 @@ const FileUpload = ({
 
       {file && file.filePath && type === "video" && (
         <div className="mt-4 relative">
-          <IKVideo
-            path={file.filePath}
-            controls={true}
-            className="h-48 w-full rounded-md"
-          />
+          {videoProcessingAvailable ? (
+            <IKVideo
+              path={file.filePath}
+              controls={true}
+              className="h-48 w-full rounded-md"
+            />
+          ) : (
+            <div className="h-48 w-full rounded-md bg-dark-300 flex items-center justify-center">
+              <div className="text-center p-4">
+                <p className="text-primary mb-2">Video Processing Limited</p>
+                <p className="text-light-100 text-sm">
+                  Video preview unavailable due to processing limits.
+                  <br />
+                  Video has been uploaded and will be available when possible.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </ImageKitProvider>

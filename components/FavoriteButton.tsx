@@ -93,8 +93,15 @@ const FavoriteButton = ({
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/books/favorite", {
-        method: "POST",
+      // Optimistically update UI first for immediate feedback
+      const newFavoriteState = !isFavorite;
+      setIsFavorite(newFavoriteState);
+
+      const method = newFavoriteState ? "POST" : "DELETE";
+      const endpoint = "/api/books/favorite";
+
+      const response = await fetch(endpoint, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -104,6 +111,7 @@ const FavoriteButton = ({
       const data = await response.json();
 
       if (data.success) {
+        // Ensure UI state matches server state
         setIsFavorite(data.favorited);
         toast({
           title: data.favorited
@@ -112,6 +120,8 @@ const FavoriteButton = ({
           description: data.message,
         });
       } else {
+        // Revert to original state if there was an error
+        setIsFavorite(!newFavoriteState);
         toast({
           title: "Error",
           description: data.error || "Failed to update favorites",
@@ -119,6 +129,8 @@ const FavoriteButton = ({
         });
       }
     } catch (error) {
+      // Revert to original state if there was an error
+      setIsFavorite(!isFavorite);
       console.error("Error toggling favorite status:", error);
       toast({
         title: "Error",

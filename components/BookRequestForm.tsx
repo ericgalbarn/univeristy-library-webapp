@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import { useToast } from "./ui/use-toast";
 import ColorPicker from "./ColorPicker";
+import { isYouTubeUrl } from "@/lib/utils";
 
 const BookRequestForm = () => {
   const router = useRouter();
@@ -210,10 +211,10 @@ const BookRequestForm = () => {
               </FormLabel>
               <FormControl>
                 <Textarea
-                  required
-                  placeholder="Book description"
+                  placeholder="Enter book description"
+                  className="book-form_input min-h-[150px]"
                   {...field}
-                  className="book-form_input h-24"
+                  maxLength={undefined}
                 />
               </FormControl>
               <FormMessage />
@@ -230,10 +231,10 @@ const BookRequestForm = () => {
               </FormLabel>
               <FormControl>
                 <Textarea
-                  required
-                  placeholder="Brief summary"
+                  placeholder="Enter book summary"
+                  className="book-form_input min-h-[150px]"
                   {...field}
-                  className="book-form_input h-24"
+                  maxLength={undefined}
                 />
               </FormControl>
               <FormMessage />
@@ -292,15 +293,57 @@ const BookRequestForm = () => {
                 Book Trailer
               </FormLabel>
               <FormControl>
-                <FileUpload
-                  type="video"
-                  accept="video/*"
-                  placeholder="Upload book trailer"
-                  folder="/book-trailers"
-                  variant="light"
-                  onFileChange={field.onChange}
-                  value={field.value}
-                />
+                <div className="space-y-2">
+                  <div className="flex flex-col">
+                    <Input
+                      placeholder="Paste YouTube URL (e.g., https://www.youtube.com/watch?v=xyz123)"
+                      className="book-form_input"
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    />
+                    <p className="text-sm text-light-400 mt-1">
+                      Upload your video to YouTube and paste the URL here
+                    </p>
+                  </div>
+
+                  <div className="flex items-center">
+                    <div className="flex-1 border-t border-dark-400"></div>
+                    <span className="mx-4 text-sm text-light-400">OR</span>
+                    <div className="flex-1 border-t border-dark-400"></div>
+                  </div>
+
+                  <div>
+                    <FileUpload
+                      type="video"
+                      accept="video/*"
+                      placeholder="Upload book trailer directly"
+                      folder="/book-trailers"
+                      variant="light"
+                      onFileChange={(value) => {
+                        if (field.value && isYouTubeUrl(field.value)) {
+                          // Ask user if they want to replace YouTube URL
+                          if (
+                            confirm("Replace YouTube URL with direct upload?")
+                          ) {
+                            field.onChange(value);
+                          }
+                        } else {
+                          field.onChange(value);
+                        }
+                      }}
+                      value={
+                        !field.value || isYouTubeUrl(field.value)
+                          ? ""
+                          : field.value
+                      }
+                    />
+                    <p className="text-amber-500 text-xs mt-1">
+                      Note: Video processing is limited and may not be available
+                      due to quota restrictions. We recommend using YouTube
+                      instead.
+                    </p>
+                  </div>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

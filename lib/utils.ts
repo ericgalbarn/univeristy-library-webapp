@@ -34,3 +34,32 @@ export function safeBase64Encode(str: string): string {
   }
   return btoa(binary);
 }
+
+/**
+ * Extracts YouTube video ID from various URL formats
+ * @param url YouTube URL (can be youtube.com, youtu.be, or embed formats)
+ * @returns YouTube video ID or null if not a valid YouTube URL
+ */
+export function getYouTubeId(url: string): string | null {
+  if (!url) return null;
+
+  // Match both youtube.com and youtu.be URL formats
+  const regExp =
+    /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+
+  // ID should be 11 characters
+  return match && match[2].length === 11 ? match[2] : null;
+}
+
+/**
+ * Checks if a URL is a valid YouTube URL
+ */
+export function isYouTubeUrl(url: string): boolean {
+  if (!url) return false;
+  return (
+    url.includes("youtube.com") ||
+    url.includes("youtu.be") ||
+    url.includes("youtube-nocookie.com")
+  );
+}

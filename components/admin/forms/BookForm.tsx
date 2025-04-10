@@ -22,6 +22,7 @@ import FileUpload from "@/components/FileUpload";
 import ColorPicker from "../ColorPicker";
 import { createBook, updateBook } from "@/lib/admin/actions/book";
 import { toast } from "@/hooks/use-toast";
+import { isYouTubeUrl } from "@/lib/utils";
 
 interface Props extends Partial<Book> {
   type?: "create" | "update";
@@ -284,7 +285,8 @@ const BookForm = ({ type = "create", bookId, ...bookData }: Props) => {
                   placeholder="Book description"
                   {...field}
                   rows={10}
-                  className="book-form_input"
+                  className="book-form_input min-h-[200px]"
+                  maxLength={undefined}
                 />
               </FormControl>
               <FormMessage />
@@ -297,18 +299,61 @@ const BookForm = ({ type = "create", bookId, ...bookData }: Props) => {
           render={({ field }) => (
             <FormItem className="flex flex-col gap-1">
               <FormLabel className="text-base font-normal text-dark-500">
-                Book Trailer
+                Book Trailer Video
               </FormLabel>
               <FormControl>
-                <FileUpload
-                  type="video"
-                  accept="video/*"
-                  placeholder="Upload a book trailer"
-                  folder="books/videos"
-                  variant="light"
-                  onFileChange={field.onChange}
-                  value={field.value}
-                />
+                <div className="space-y-2">
+                  <div className="flex flex-col">
+                    <Input
+                      placeholder="Paste YouTube URL (e.g., https://www.youtube.com/watch?v=xyz123)"
+                      className="book-form_input"
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Upload your video to YouTube and paste the URL here
+                      (recommended)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center">
+                    <div className="flex-1 border-t border-gray-200"></div>
+                    <span className="mx-4 text-sm text-gray-500">OR</span>
+                    <div className="flex-1 border-t border-gray-200"></div>
+                  </div>
+
+                  <div>
+                    <FileUpload
+                      type="video"
+                      accept="video/*"
+                      placeholder="Upload book trailer directly"
+                      folder="books/trailers"
+                      variant="light"
+                      onFileChange={(value) => {
+                        if (field.value && isYouTubeUrl(field.value)) {
+                          // Ask user if they want to replace YouTube URL
+                          if (
+                            confirm("Replace YouTube URL with direct upload?")
+                          ) {
+                            field.onChange(value);
+                          }
+                        } else {
+                          field.onChange(value);
+                        }
+                      }}
+                      value={
+                        !field.value || isYouTubeUrl(field.value)
+                          ? ""
+                          : field.value
+                      }
+                    />
+                    <p className="text-amber-500 text-xs mt-1">
+                      Note: Video processing is limited and may not be available
+                      due to quota restrictions. We recommend using YouTube
+                      instead.
+                    </p>
+                  </div>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -327,7 +372,8 @@ const BookForm = ({ type = "create", bookId, ...bookData }: Props) => {
                   placeholder="Book summary"
                   {...field}
                   rows={5}
-                  className="book-form_input"
+                  className="book-form_input min-h-[150px]"
+                  maxLength={undefined}
                 />
               </FormControl>
               <FormMessage />
