@@ -7,6 +7,7 @@ import BookOverview from "@/components/BookOverview";
 import { books, users } from "@/db/schema";
 import { auth } from "@/auth";
 import BookVideo from "@/components/BookVideo";
+import MLBookRecommendations from "@/components/MLBookRecommendations";
 
 export default async function BookPage({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -84,6 +85,11 @@ export default async function BookPage({ params }: { params: { id: string } }) {
                   <p key={i}>{line}</p>
                 ))}
               </div>
+            </section>
+
+            {/* Book recommendations */}
+            <section className="mt-16">
+              <MLBookRecommendations bookId={id} />
             </section>
           </div>
 
