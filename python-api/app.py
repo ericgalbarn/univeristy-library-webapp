@@ -1,11 +1,16 @@
 import os
 import pickle
 import json
+import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -15,11 +20,15 @@ CORS(app)
 
 # Database connection
 def get_db_connection():
-    conn = psycopg2.connect(
-        os.getenv('DATABASE_URL'),
-        cursor_factory=RealDictCursor
-    )
-    return conn
+    try:
+        conn = psycopg2.connect(
+            os.getenv('DATABASE_URL'),
+            cursor_factory=RealDictCursor
+        )
+        return conn
+    except Exception as e:
+        logger.error(f"Database connection error: {e}")
+        return None
 
 # Load genre relationships if available
 try:
@@ -96,9 +105,30 @@ except Exception as e:
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    return jsonify({
-        "status": "ok"
-    })
+    logger.info("Health check endpoint accessed")
+    try:
+        # Try to connect to the database
+        conn = get_db_connection()
+        if conn:
+            conn.close()
+            logger.info("Health check: Database connection successful")
+            db_status = "connected"
+        else:
+            logger.warning("Health check: Database connection failed")
+            db_status = "disconnected"
+        
+        return jsonify({
+            "status": "ok",
+            "database": db_status,
+            "port": os.getenv("PORT", "5000"),
+            "environment": os.getenv("RAILWAY_ENVIRONMENT", "unknown")
+        })
+    except Exception as e:
+        logger.error(f"Health check error: {e}")
+        return jsonify({
+            "status": "error", 
+            "error": str(e)
+        }), 500
 
 def calculate_similarity(genre1, genre2):
     """Calculate similarity between two genres"""
