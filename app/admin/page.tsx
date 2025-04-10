@@ -10,6 +10,7 @@ import {
   BookMarked,
   ArrowUpRight,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "@/hooks/use-toast";
@@ -353,6 +354,13 @@ const AdminDashboard = () => {
               <Link href="/admin/books/new">
                 <BookOpen className="h-4 w-4" />
                 Add New Book
+              </Link>
+            </Button>
+
+            <Button asChild variant="outline" className="justify-start gap-2">
+              <Link href="/admin/book-addition-requests">
+                <FileText className="h-4 w-4" />
+                Book Addition Requests
               </Link>
             </Button>
 

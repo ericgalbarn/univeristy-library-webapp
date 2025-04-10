@@ -83,7 +83,28 @@ const BookCard = ({
   const checkFavoriteStatus = async () => {
     try {
       const response = await fetch(`/api/books/favorite?bookId=${id}`);
-      const data = await response.json();
+
+      // Check if the response is OK before trying to parse JSON
+      if (!response.ok) {
+        console.error(`Error checking favorite status: ${response.status}`);
+        return;
+      }
+
+      // Check if the response has content before parsing JSON
+      const contentType = response.headers.get("content-type");
+      let data;
+
+      if (
+        contentType &&
+        contentType.includes("application/json") &&
+        response.status !== 204
+      ) {
+        data = await response.json();
+      } else {
+        // Handle empty response or no JSON content
+        console.warn("Empty or non-JSON response from favorite check");
+        return;
+      }
 
       if (data.success) {
         setIsFavorite(data.favorited);
@@ -107,10 +128,23 @@ const BookCard = ({
       return;
     }
 
+    if (!id) {
+      toast({
+        title: "Error",
+        description: "Book ID is missing. Cannot update favorites.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const method = isFavorite ? "DELETE" : "POST";
+      console.log(
+        `Sending ${method} request to /api/books/favorite with bookId: ${id}`
+      );
+
       const response = await fetch("/api/books/favorite", {
         method,
         headers: {
@@ -119,7 +153,34 @@ const BookCard = ({
         body: JSON.stringify({ bookId: id }),
       });
 
-      const data = await response.json();
+      // Log the response status for debugging
+      console.log(`Response status: ${response.status}`);
+
+      // Check if the response is OK
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "No error details");
+        console.error(`Error response: ${errorText}`);
+        throw new Error(
+          `Server responded with status: ${response.status} - ${errorText}`
+        );
+      }
+
+      // Check if the response has content before parsing JSON
+      const contentType = response.headers.get("content-type");
+      let data;
+
+      if (
+        contentType &&
+        contentType.includes("application/json") &&
+        response.status !== 204
+      ) {
+        data = await response.json();
+        console.log("Response data:", data);
+      } else {
+        // Handle empty response or no JSON content
+        console.log("No JSON content in response, using fallback");
+        data = { success: response.ok };
+      }
 
       if (data.success) {
         setIsFavorite(!isFavorite);
@@ -146,7 +207,7 @@ const BookCard = ({
       console.error("Error toggling favorite status:", error);
       toast({
         title: "Error",
-        description: "Something went wrong, please try again later.",
+        description: `Could not update favorites: ${error instanceof Error ? error.message : "Unknown error"}`,
         variant: "destructive",
       });
     } finally {

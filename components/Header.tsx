@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { Session } from "next-auth";
-import { BookOpen, Heart, ShoppingCart } from "lucide-react";
+import {
+  BookOpen,
+  Heart,
+  ShoppingCart,
+  PlusCircle,
+  ClipboardList,
+} from "lucide-react";
 import { useBorrowCart } from "@/lib/BorrowCartContext";
 import { logoutAction } from "@/lib/actions/auth-actions";
 
@@ -31,6 +37,20 @@ const Header = ({ session }: { session: Session }) => {
           <Button variant="outline" className="flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
             Browse Library
+          </Button>
+        </Link>
+
+        <Link href="/request-book">
+          <Button variant="outline" className="flex items-center gap-2">
+            <PlusCircle className="h-4 w-4" />
+            Request Book
+          </Button>
+        </Link>
+
+        <Link href="/my-profile/book-requests">
+          <Button variant="outline" className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            My Requests
           </Button>
         </Link>
 

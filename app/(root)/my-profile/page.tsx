@@ -174,6 +174,16 @@ const MyProfilePage = async () => {
                   <Link href="/">Browse More Books</Link>
                 </Button>
               </div>
+              <div className="rounded-full bg-dark-400/30 p-1.5 border border-dark-600">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-light-200 hover:text-primary hover:bg-dark-500/50"
+                >
+                  <Link href="/my-profile/book-requests">My Book Requests</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </section>
@@ -225,6 +235,16 @@ const MyProfilePage = async () => {
                 className="text-light-200 hover:text-primary hover:bg-dark-500/50"
               >
                 <Link href="/">Browse More Books</Link>
+              </Button>
+            </div>
+            <div className="rounded-full bg-dark-400/30 p-1.5 border border-dark-600">
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="text-light-200 hover:text-primary hover:bg-dark-500/50"
+              >
+                <Link href="/my-profile/book-requests">My Book Requests</Link>
               </Button>
             </div>
           </div>

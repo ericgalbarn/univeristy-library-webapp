@@ -151,35 +151,48 @@ const FileUpload = ({
         />
 
         <p className={cn("text-base", styles.placeholder)}>{placeholder}</p>
-
-        {file && (
-          <p className={cn("upload-filename", styles.text)}>{file.filePath}</p>
-        )}
       </button>
 
+      {file && file.filePath && (
+        <div className="mt-2">
+          <p className={cn("text-sm", styles.text, "font-medium")}>
+            {file.filePath.split("/").pop()}
+          </p>
+        </div>
+      )}
+
       {progress > 0 && progress != 100 && (
-        <div className="w-full rounded-full bg-green-200">
+        <div className="w-full rounded-full bg-green-200 mt-2">
           <div className="progress" style={{ width: `${progress}%` }}>
             {progress}%
           </div>
         </div>
       )}
 
-      {file &&
-        (type === "image" ? (
-          <IKImage
-            alt={file.filePath}
-            path={file.filePath}
-            width={500}
-            height={500}
-          />
-        ) : type === "video" ? (
+      {file && file.filePath && type === "image" && (
+        <div className="mt-4 relative">
+          <div className="relative w-full h-64 rounded-md overflow-hidden border border-gray-200">
+            <IKImage
+              alt={file.filePath}
+              path={file.filePath}
+              width={500}
+              height={500}
+              className="object-contain w-full h-full"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      )}
+
+      {file && file.filePath && type === "video" && (
+        <div className="mt-4 relative">
           <IKVideo
             path={file.filePath}
             controls={true}
-            className="h-96 w-full rounded-xl"
+            className="h-48 w-full rounded-md"
           />
-        ) : null)}
+        </div>
+      )}
     </ImageKitProvider>
   );
 };
