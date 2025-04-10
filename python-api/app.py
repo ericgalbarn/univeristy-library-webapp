@@ -97,9 +97,7 @@ except Exception as e:
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({
-        "status": "ok",
-        "message": "Book recommendation API is running",
-        "relationships_loaded": len(genre_relationships) > 0
+        "status": "ok"
     })
 
 def calculate_similarity(genre1, genre2):
