@@ -3,6 +3,7 @@ import { db } from "@/db/db";
 import { books } from "@/db/schema";
 import { desc, eq, asc, and, gte, lte, like, or, sql } from "drizzle-orm";
 import { auth } from "@/auth";
+import { genreStringToArray } from "@/lib/validation";
 
 type Book = {
   id: string;
@@ -68,15 +69,18 @@ export async function GET(req: NextRequest) {
       ? sortOrderParam
       : "desc";
 
-    // Get unique genres (we always need this)
-    const genresResult = await db
-      .select({ genre: books.genre })
-      .from(books)
-      .groupBy(books.genre)
-      .orderBy(books.genre);
+    // Get all unique genres from books (splitting comma-separated values)
+    const booksWithGenres = await db.select({ genre: books.genre }).from(books);
+    const allGenres = new Set<string>();
 
-    // Extract unique genres
-    const genres = genresResult.map((g) => g.genre);
+    // Extract all unique genres from comma-separated lists
+    booksWithGenres.forEach((book) => {
+      const bookGenres = genreStringToArray(book.genre);
+      bookGenres.forEach((genre) => allGenres.add(genre));
+    });
+
+    // Convert Set to sorted array
+    const genres = Array.from(allGenres).sort();
 
     // If only genres are requested, return early
     if (genresOnly) {
@@ -91,7 +95,16 @@ export async function GET(req: NextRequest) {
 
     // Genre filter (primary filter) - skip this if showAllBooks is true
     if (selectedGenre && !showAllBooks) {
-      conditions.push(eq(books.genre, selectedGenre));
+      // Use SQL LIKE to match genre in comma-separated list
+      // This will match if the genre is in the list
+      conditions.push(
+        or(
+          eq(books.genre, selectedGenre), // Exact match
+          sql`${books.genre} LIKE ${`%${selectedGenre},%`}`, // At the beginning or middle
+          sql`${books.genre} LIKE ${`%,${selectedGenre}`}`, // At the end
+          sql`${books.genre} LIKE ${`%,${selectedGenre},%`}` // In the middle
+        )
+      );
     }
 
     // Search filter (title or author) - use sql template for case-insensitive search
@@ -168,6 +181,12 @@ export async function GET(req: NextRequest) {
         : baseQuery.orderBy(desc(books.createdAt)));
     }
 
+    // Helper function to determine if a book belongs to a specific genre
+    const bookBelongsToGenre = (book: Book, genre: string): boolean => {
+      const bookGenres = genreStringToArray(book.genre);
+      return bookGenres.includes(genre);
+    };
+
     // If this is the initial view (showAllBooks) or a specific genre, return books directly
     if (showAllBooks || selectedGenre) {
       return NextResponse.json({
@@ -187,11 +206,13 @@ export async function GET(req: NextRequest) {
         totalCount: filteredBooks.length,
       });
     } else {
-      // Otherwise, organize by genre
+      // Otherwise, organize by genre - each book can appear in multiple genre groups
       const booksByGenre = genres.map((genre) => {
-        const genreBooks = filteredBooks.filter(
-          (book: Book) => book.genre === genre
+        // A book belongs to this genre if the genre is in its comma-separated list
+        const genreBooks = filteredBooks.filter((book: Book) =>
+          bookBelongsToGenre(book, genre)
         );
+
         return {
           genre,
           books: genreBooks,

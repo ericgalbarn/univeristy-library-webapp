@@ -14,18 +14,21 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
-import { bookSchema } from "@/lib/validation";
+import { bookSchema, genreArrayToString } from "@/lib/validation";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import { useToast } from "./ui/use-toast";
 import ColorPicker from "./ColorPicker";
 import { isYouTubeUrl } from "@/lib/utils";
+import { X } from "lucide-react";
 
 const BookRequestForm = () => {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [genreInput, setGenreInput] = useState("");
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof bookSchema>>({
     resolver: zodResolver(bookSchema),
@@ -42,6 +45,29 @@ const BookRequestForm = () => {
       summary: "",
     },
   });
+
+  const addGenre = () => {
+    const trimmedGenre = genreInput.trim();
+    if (trimmedGenre && !selectedGenres.includes(trimmedGenre)) {
+      const newGenres = [...selectedGenres, trimmedGenre];
+      setSelectedGenres(newGenres);
+      form.setValue("genre", genreArrayToString(newGenres));
+      setGenreInput("");
+    }
+  };
+
+  const removeGenre = (genre: string) => {
+    const newGenres = selectedGenres.filter((g) => g !== genre);
+    setSelectedGenres(newGenres);
+    form.setValue("genre", genreArrayToString(newGenres));
+  };
+
+  const handleGenreKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addGenre();
+    }
+  };
 
   const onSubmit = async (values: z.infer<typeof bookSchema>) => {
     setIsSubmitting(true);
@@ -68,6 +94,7 @@ const BookRequestForm = () => {
 
         // Reset form
         form.reset();
+        setSelectedGenres([]);
 
         // Redirect to user's book requests page
         router.push("/my-profile/book-requests");
@@ -139,16 +166,48 @@ const BookRequestForm = () => {
           render={({ field }) => (
             <FormItem className="flex flex-col gap-1">
               <FormLabel className="text-base font-normal text-dark-500">
-                Genre
+                Genres
               </FormLabel>
-              <FormControl>
-                <Input
-                  required
-                  placeholder="Book genre"
-                  {...field}
-                  className="book-form_input"
-                />
-              </FormControl>
+              <div>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {selectedGenres.map((genre) => (
+                    <div
+                      key={genre}
+                      className="flex items-center bg-primary/10 text-primary rounded-full px-3 py-1"
+                    >
+                      <span className="mr-1">{genre}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeGenre(genre)}
+                        className="text-primary hover:text-primary/80"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex">
+                  <Input
+                    value={genreInput}
+                    onChange={(e) => setGenreInput(e.target.value)}
+                    onKeyDown={handleGenreKeyDown}
+                    placeholder="Add genre (comma or enter to add)"
+                    className="book-form_input"
+                  />
+                  <Button
+                    type="button"
+                    onClick={addGenre}
+                    className="ml-2"
+                    variant="outline"
+                  >
+                    Add
+                  </Button>
+                </div>
+                <input type="hidden" {...field} />
+                <p className="text-xs text-gray-500 mt-1">
+                  Add multiple genres by typing and pressing Enter or comma
+                </p>
+              </div>
               <FormMessage />
             </FormItem>
           )}

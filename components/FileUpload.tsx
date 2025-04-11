@@ -15,19 +15,47 @@ const {
 
 const authenticator = async () => {
   try {
+    // Log that we're making the request
+    console.log("Requesting ImageKit authentication tokens...");
+
     const response = await fetch("/api/auth/imagekit");
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("ImageKit authentication failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        errorText,
+      });
+
+      // User-friendly error notification
+      toast({
+        title: "Image upload error",
+        description:
+          "We couldn't authenticate with our image service. Please try again later.",
+        variant: "destructive",
+      });
+
       throw new Error(
         `Request failed with status ${response.status}: ${errorText}`
       );
     }
 
     const data = await response.json();
+
+    // Check for required fields in response
+    if (!data.signature || !data.expire || !data.token) {
+      console.error("Invalid ImageKit auth response:", data);
+      throw new Error("Authentication response is missing required fields");
+    }
+
     const { signature, expire, token } = data;
+    console.log("Authentication successful");
     return { signature, expire, token };
   } catch (error: any) {
+    console.error("ImageKit authentication error:", error);
+
+    // Provide detailed error message when possible
     throw new Error(`Authentication request failed: ${error.message}`);
   }
 };

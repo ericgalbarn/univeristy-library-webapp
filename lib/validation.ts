@@ -17,7 +17,7 @@ export const bookSchema = z.object({
   title: z.string().trim().min(2).max(100),
   description: z.string().trim().min(10),
   author: z.string().trim().min(2).max(100),
-  genre: z.string().trim().min(2).max(50),
+  genre: z.string().trim().min(2).max(100),
   rating: z.coerce.number().min(1).max(5),
   totalCopies: z.coerce.number().int().positive().lte(10000),
   coverUrl: z.string().nonempty(),
@@ -28,3 +28,15 @@ export const bookSchema = z.object({
   videoUrl: z.string().nonempty(),
   summary: z.string().trim().min(10),
 });
+
+// Helper functions for multi-genre support
+export const genreArrayToString = (genres: string[]): string => {
+  return genres.join(",");
+};
+
+export const genreStringToArray = (genreString: string): string[] => {
+  return genreString
+    .split(",")
+    .map((genre) => genre.trim())
+    .filter(Boolean);
+};

@@ -148,19 +148,28 @@ const BookOverview = ({
                 By{" "}
                 <span className="font-semibold text-light-200">{author}</span>
               </p>
-              <p>
-                Category{" "}
-                <span className="font-semibold text-light-200">{genre}</span>
-              </p>
+              <div className="flex flex-wrap gap-2 my-1">
+                <p className="mr-1">Categories: </p>
+                {genre.split(",").map((g, i) => (
+                  <span
+                    key={i}
+                    className="inline-block text-sm px-2 py-0.5 bg-primary/10 text-primary rounded-full font-semibold"
+                  >
+                    {g.trim()}
+                  </span>
+                ))}
+              </div>
 
-              <div className="flex flex-row gap-1">
+              <div className="flex items-center gap-0.5 mt-1">
                 <Image
                   src="/icons/star.svg"
                   alt="star"
                   width={22}
                   height={22}
                 />
-                <p>{rating}</p>
+                <p className="text-lg font-medium flex items-center">
+                  {rating}
+                </p>
               </div>
             </div>
 

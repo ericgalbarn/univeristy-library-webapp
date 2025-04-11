@@ -1,24 +1,30 @@
 "use client";
 
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import React, { useState, useEffect, useRef } from "react";
-import BookCover from "./BookCover";
-import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { Button } from "./ui/button";
-import { AlertTriangle, Calendar, Clock, Heart } from "lucide-react";
-import { useToast } from "./ui/use-toast";
-import { useSession } from "next-auth/react";
+import { cn } from "@/lib/utils";
+import BookCover from "./BookCover";
+import { ReturnIcon } from "./ui/custom-icons";
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  useSpring,
+  useInView,
+} from "framer-motion";
+import BookCoverSvg from "./BookCoverSvg";
+import FavoriteButton from "./FavoriteButton";
 import AddToBorrowCartButton from "./AddToBorrowCartButton";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { genreStringToArray } from "@/lib/validation";
 
 interface BookCardProps extends Book {
-  showDueDate?: boolean;
-  dueDate?: Date;
-  daysUntilDue?: number;
-  isOverdue?: boolean;
-  isLoanedBook?: boolean;
-  author: string;
+  variant?: "default" | "loaned" | "minimal";
+  showActions?: boolean;
+  currentlyReading?: boolean;
+  returnDate?: string | Date;
+  onReturnClick?: (bookId: string) => void;
+  className?: string;
 }
 
 const BookCard = ({
@@ -26,415 +32,209 @@ const BookCard = ({
   title,
   author,
   genre,
-  coverColor,
   coverUrl,
-  isLoanedBook = false,
-  showDueDate = false,
-  dueDate,
-  daysUntilDue,
-  isOverdue,
+  coverColor,
+  totalCopies,
+  availableCopies,
+  rating,
+  variant = "default",
+  showActions = true,
+  currentlyReading,
+  returnDate,
+  onReturnClick,
+  className,
 }: BookCardProps) => {
-  const { toast } = useToast();
-  const { data: session } = useSession();
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [animationKey, setAnimationKey] = useState(0);
-  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isLoanedBook = variant === "loaned";
+  const isMinimal = variant === "minimal";
 
-  // Motion values for natural, fluid animations
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
+
+  // For hover effects
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  // Add spring physics for more natural movement
-  const springConfig = { stiffness: 300, damping: 25 };
-  const xSpring = useSpring(x, springConfig);
-  const ySpring = useSpring(y, springConfig);
+  // Create springs for smoother motion
+  const xSpring = useSpring(x, { stiffness: 150, damping: 20 });
+  const ySpring = useSpring(y, { stiffness: 150, damping: 20 });
 
-  // Define transform hooks at component level to fix hook order issues
-  const rotateYTransform = useTransform(xSpring, [-3, 3], [-5, 5]);
-  const rotateXTransform = useTransform(ySpring, [-5, 5], [2, -2]);
+  // Calculate rotations based on mouse position
+  const rotateX = useTransform(ySpring, [-0.5, 0.5], [1, -1]);
+  const rotateY = useTransform(xSpring, [-0.5, 0.5], [-1, 1]);
 
-  // Format the due date to a readable string
-  const formattedDueDate = dueDate
-    ? new Date(dueDate).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
-    : "";
+  // Handle mouse move for the 3D effect
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isMinimal) return; // Skip effect for minimal variant
 
-  // Check if book is favorited on component mount
-  useEffect(() => {
-    if (session?.user) {
-      checkFavoriteStatus();
-    }
-  }, [session, id]);
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Check if book is in user's favorites
-  const checkFavoriteStatus = async () => {
-    try {
-      const response = await fetch(`/api/books/favorite?bookId=${id}`);
-
-      // Check if the response is OK before trying to parse JSON
-      if (!response.ok) {
-        console.error(`Error checking favorite status: ${response.status}`);
-        return;
-      }
-
-      // Check if the response has content before parsing JSON
-      const contentType = response.headers.get("content-type");
-      let data;
-
-      if (
-        contentType &&
-        contentType.includes("application/json") &&
-        response.status !== 204
-      ) {
-        data = await response.json();
-      } else {
-        // Handle empty response or no JSON content
-        console.warn("Empty or non-JSON response from favorite check");
-        return;
-      }
-
-      if (data.success) {
-        setIsFavorite(data.favorited);
-      }
-    } catch (error) {
-      console.error("Error checking favorite status:", error);
-    }
-  };
-
-  // Toggle favorite status
-  const toggleFavorite = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!session?.user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to add books to your favorites.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!id) {
-      toast({
-        title: "Error",
-        description: "Book ID is missing. Cannot update favorites.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const method = isFavorite ? "DELETE" : "POST";
-      console.log(
-        `Sending ${method} request to /api/books/favorite with bookId: ${id}`
-      );
-
-      const response = await fetch("/api/books/favorite", {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bookId: id }),
-      });
-
-      // Log the response status for debugging
-      console.log(`Response status: ${response.status}`);
-
-      // Check if the response is OK
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "No error details");
-        console.error(`Error response: ${errorText}`);
-        throw new Error(
-          `Server responded with status: ${response.status} - ${errorText}`
-        );
-      }
-
-      // Check if the response has content before parsing JSON
-      const contentType = response.headers.get("content-type");
-      let data;
-
-      if (
-        contentType &&
-        contentType.includes("application/json") &&
-        response.status !== 204
-      ) {
-        data = await response.json();
-        console.log("Response data:", data);
-      } else {
-        // Handle empty response or no JSON content
-        console.log("No JSON content in response, using fallback");
-        data = { success: response.ok };
-      }
-
-      if (data.success) {
-        setIsFavorite(!isFavorite);
-        setAnimationKey((prev) => prev + 1); // Trigger animation
-
-        // Clear any existing animation timeout
-        if (animationTimeoutRef.current) {
-          clearTimeout(animationTimeoutRef.current);
-        }
-
-        // Set a timeout to trigger another animation key update when the animation should end
-        animationTimeoutRef.current = setTimeout(() => {
-          setAnimationKey((prev) => prev + 1);
-        }, 800); // Match this to your animation duration
-
-        toast({
-          title: isFavorite ? "Removed from favorites" : "Added to favorites",
-          description: isFavorite
-            ? `${title} has been removed from your favorites.`
-            : `${title} has been added to your favorites.`,
-        });
-      }
-    } catch (error) {
-      console.error("Error toggling favorite status:", error);
-      toast({
-        title: "Error",
-        description: `Could not update favorites: ${error instanceof Error ? error.message : "Unknown error"}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Mouse movement handlers for 3D effect
-  const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    const width = rect.width;
+    const height = rect.height;
 
-    // Calculate distance from center (normalized to -1 to 1)
-    const moveX = (e.clientX - centerX) / (rect.width / 2);
-    const moveY = (e.clientY - centerY) / (rect.height / 2);
+    // Calculate normalized position (0 to 1)
+    const xValue = (e.clientX - rect.left) / width;
+    const yValue = (e.clientY - rect.top) / height;
 
-    // Apply subtle movement
-    x.set(moveX * 3);
-    y.set(moveY * -5);
+    // Convert to -0.5 to 0.5 range
+    x.set(xValue - 0.5);
+    y.set(yValue - 0.5);
   };
 
-  // Reset position when mouse leaves
+  // Reset on mouse leave
   const handleMouseLeave = () => {
     x.set(0);
     y.set(0);
   };
 
+  // Parse the comma-separated genres into an array
+  const genreArray = genreStringToArray(genre);
+
   return (
-    <li className={cn(isLoanedBook && "xs:w-52 w-full")}>
-      <Link
-        href={`/books/${id}`}
-        className={cn(isLoanedBook && "w-full flex flex-col items-center")}
+    <motion.div
+      ref={ref}
+      className={cn(
+        "group relative flex min-h-[280px] w-full flex-col gap-2 overflow-visible transition-transform duration-300 ease-out",
+        isMinimal && "min-h-fit",
+        className
+      )}
+      initial={{ opacity: 0, y: 50 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{
+        duration: 0.4,
+        ease: "easeOut",
+        delay: 0.1,
+      }}
+    >
+      <div
+        className={cn("relative block h-full w-full", !isMinimal && "mb-3")}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
       >
-        <motion.div
-          className="relative perspective-container"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          whileHover={{ scale: 1.05 }}
-          transition={{
-            scale: {
-              type: "spring",
-              stiffness: 260,
-              damping: 20,
-            },
-          }}
+        <Link
+          href={`/books/${id}`}
+          className={cn(
+            "block font-medium no-underline",
+            isLoanedBook && "flex items-start gap-2"
+          )}
         >
-          <motion.div
-            className="will-change-transform"
-            style={{
-              rotateY: rotateYTransform,
-              rotateX: rotateXTransform,
-            }}
-          >
-            <BookCover coverColor={coverColor} coverImage={coverUrl} />
-          </motion.div>
-
-          {/* Heart icon for favoriting */}
-          <div className="absolute top-2 right-2 z-20">
-            <button
-              onClick={toggleFavorite}
-              disabled={isLoading}
-              className={cn(
-                "bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-all duration-200 hover:scale-110 hover:shadow-md",
-                `animate-buttonBounce-${animationKey}`,
-                isFavorite && "shadow-rose-100"
-              )}
-              aria-label={
-                isFavorite ? "Remove from favorites" : "Add to favorites"
-              }
-            >
-              <Heart
-                className={cn(
-                  "h-5 w-5 transition-all duration-300",
-                  isFavorite ? "fill-red-500 text-red-500" : "text-gray-400",
-                  `animate-heartPulse-${animationKey}`
-                )}
-              />
-              <span className="absolute inset-0 pointer-events-none">
-                <span
-                  className={`absolute inset-0 rounded-full animate-ripple-${animationKey} bg-red-100 opacity-0`}
-                />
-              </span>
-            </button>
-          </div>
-        </motion.div>
-
-        <div className={cn("mt-4", !isLoanedBook && "xs:max-w-40 max-w-28")}>
-          <p className="book-title">{title}</p>
-          <p className="book-genre">{genre}</p>
-        </div>
-      </Link>
-
-      {/* Add to Borrow Cart button */}
-      <div className="mt-3">
-        <AddToBorrowCartButton
-          book={{ id, title, author, coverUrl, coverColor }}
-          size="sm"
-          variant="outline"
-          className="w-full text-xs"
-        />
-      </div>
-
-      {(isLoanedBook || showDueDate) && dueDate && (
-        <div className="mt-3 w-full">
           <div
             className={cn(
-              "book-loaned flex items-center gap-2 p-2 rounded-md",
-              isOverdue
-                ? "bg-red-50 text-red-700"
-                : daysUntilDue && daysUntilDue < 3
-                  ? "bg-amber-50 text-amber-700"
-                  : "bg-gray-50 text-gray-700"
+              "relative transform-gpu overflow-visible transition-transform duration-300 ease-out",
+              !isMinimal && "mb-3"
             )}
+            style={{
+              transform: isMinimal
+                ? "none"
+                : `perspective(600px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+              transformStyle: "preserve-3d",
+              willChange: "transform",
+            }}
           >
-            {isOverdue ? (
-              <AlertTriangle className="h-4 w-4" />
-            ) : (
-              <Calendar className="h-4 w-4" />
-            )}
+            <BookCover
+              variant={isLoanedBook ? "small" : isMinimal ? "small" : "regular"}
+              coverColor={coverColor}
+              coverImage={coverUrl}
+              className={isLoanedBook ? "shadow-sm" : "shadow-md"}
+            />
 
-            <div className="flex flex-col text-xs">
-              <p className="font-medium">
-                {isOverdue
-                  ? `Overdue by ${Math.abs(daysUntilDue || 0)} days`
-                  : `${daysUntilDue !== undefined ? daysUntilDue : 0} days left to return`}
-              </p>
-              <p className="text-xs opacity-80">Due: {formattedDueDate}</p>
-            </div>
+            {/* Currently reading indicator */}
+            {currentlyReading && (
+              <div className="absolute -left-1 top-0 flex items-center gap-1 whitespace-nowrap rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-white">
+                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white"></div>
+                Currently Reading
+              </div>
+            )}
           </div>
 
-          <Button variant="outline" className="book-btn mt-2 w-full text-xs">
-            Download receipt
-          </Button>
-        </div>
-      )}
+          <div className={cn("mt-4", !isLoanedBook && "xs:max-w-40 max-w-28")}>
+            <div className="book-card-info">
+              <div className="book-card-header">
+                <h3
+                  className="book-card-title text-white font-medium text-sm line-clamp-2"
+                  title={title}
+                >
+                  {title}
+                </h3>
+              </div>
 
-      <style jsx global>{`
-        @keyframes buttonBounce {
-          0%,
-          100% {
-            transform: scale(1) translateY(0);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-          }
-          10% {
-            transform: scale(1.1) translateY(0);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          }
-          25% {
-            transform: scale(1.05) translateY(-10px);
-            box-shadow: 0 8px 16px rgba(255, 0, 0, 0.1);
-          }
-          40% {
-            transform: scale(1.08) translateY(-5px);
-            box-shadow: 0 6px 12px rgba(255, 0, 0, 0.1);
-          }
-          55% {
-            transform: scale(1.05) translateY(-8px);
-            box-shadow: 0 5px 10px rgba(255, 0, 0, 0.1);
-          }
-          70% {
-            transform: scale(1.03) translateY(-3px);
-            box-shadow: 0 3px 8px rgba(255, 0, 0, 0.1);
-          }
-          85% {
-            transform: scale(1) translateY(-1px);
-            box-shadow: 0 2px 5px rgba(255, 0, 0, 0.1);
-          }
-        }
+              <p className="book-card-author text-white text-xs opacity-80 mt-1">
+                {author}
+              </p>
 
-        @keyframes heartPulse {
-          0% {
-            transform: scale(1);
-          }
-          15% {
-            transform: scale(1.25);
-          }
-          30% {
-            transform: scale(0.95);
-          }
-          45% {
-            transform: scale(1.15);
-          }
-          60% {
-            transform: scale(0.95);
-          }
-          75% {
-            transform: scale(1.05);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
+              {/* Improved rating display - placed right next to the star icon */}
+              <div className="book-card-rating flex items-center gap-0.5 mt-1">
+                <Image
+                  src="/icons/star.svg"
+                  alt="star"
+                  height={14}
+                  width={14}
+                />
+                <p className="text-white text-xs">{rating}</p>
+              </div>
 
-        @keyframes ripple {
-          0% {
-            transform: scale(0.8);
-            opacity: 0.6;
-          }
-          50% {
-            opacity: 0.3;
-          }
-          100% {
-            transform: scale(2);
-            opacity: 0;
-          }
-        }
+              <div className="mt-2 flex flex-wrap gap-1">
+                {genreArray.map((g, i) => (
+                  <span
+                    key={i}
+                    className="inline-block text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full"
+                  >
+                    {g}
+                  </span>
+                ))}
+              </div>
 
-        .animate-buttonBounce-${animationKey} {
-          animation: ${animationKey > 0
-            ? "buttonBounce 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards"
-            : "none"};
-        }
+              {/* Display availability indicator */}
+              <div className="mt-2 flex items-center gap-2">
+                <div
+                  className={`h-2 w-2 rounded-full ${
+                    availableCopies > 0 ? "bg-green-500" : "bg-red-500"
+                  }`}
+                />
+                <p className="text-xs text-white opacity-70">
+                  {availableCopies > 0
+                    ? `${availableCopies} available`
+                    : "Not available"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
 
-        .animate-heartPulse-${animationKey} {
-          animation: ${animationKey > 0
-            ? "heartPulse 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards"
-            : "none"};
-        }
+        {/* Return button for loaned books */}
+        {isLoanedBook && returnDate && (
+          <div className="mt-2 flex flex-col">
+            <p className="text-xs text-gray-600">
+              Due: {new Date(returnDate).toLocaleDateString()}
+            </p>
+            {onReturnClick && (
+              <button
+                onClick={() => onReturnClick(id)}
+                className="mt-1 flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-sm font-medium text-primary hover:bg-primary/20"
+              >
+                <ReturnIcon className="h-4 w-4" />
+                Return Book
+              </button>
+            )}
+          </div>
+        )}
 
-        .animate-ripple-${animationKey} {
-          animation: ${animationKey > 0
-            ? "ripple 1s ease-out forwards"
-            : "none"};
-        }
-      `}</style>
-    </li>
+        {/* Action buttons */}
+        {!isLoanedBook && !isMinimal && showActions && (
+          <div className="invisible absolute right-0 top-0 flex translate-x-0 translate-y-0 items-start gap-2 opacity-0 transition-all group-hover:visible group-hover:translate-x-2 group-hover:-translate-y-2 group-hover:opacity-100">
+            <FavoriteButton bookId={id} />
+            <AddToBorrowCartButton
+              book={{
+                id,
+                title,
+                author,
+                coverUrl,
+                coverColor,
+              }}
+              size="sm"
+            />
+          </div>
+        )}
+      </div>
+    </motion.div>
   );
 };
 

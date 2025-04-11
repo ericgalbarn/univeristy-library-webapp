@@ -130,12 +130,8 @@ def health_check():
             "error": str(e)
         }), 500
 
-def calculate_similarity(genre1, genre2):
-    """Calculate similarity between two genres"""
-    # Convert to lowercase for comparison
-    g1 = genre1.lower()
-    g2 = genre2.lower()
-    
+def calculate_individual_similarity(g1, g2):
+    """Calculate similarity between two individual genres"""
     # Exact match
     if g1 == g2:
         return 1.0
@@ -159,6 +155,23 @@ def calculate_similarity(genre1, genre2):
     
     # Default low similarity
     return 0.1
+
+def calculate_similarity(genre1, genre2):
+    """Calculate similarity between two genres (potentially comma-separated lists)"""
+    # Split comma-separated genres
+    genres1 = [g.strip().lower() for g in genre1.lower().split(',')]
+    genres2 = [g.strip().lower() for g in genre2.lower().split(',')]
+    
+    # Calculate maximum similarity between any pair of genres
+    max_similarity = 0.1  # Default low similarity
+    
+    for g1 in genres1:
+        for g2 in genres2:
+            # Use the individual genre similarity function
+            similarity = calculate_individual_similarity(g1, g2)
+            max_similarity = max(max_similarity, similarity)
+    
+    return max_similarity
 
 @app.route('/api/recommendations/<book_id>', methods=['GET'])
 def get_recommendations(book_id):

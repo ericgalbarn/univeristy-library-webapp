@@ -11,39 +11,58 @@ const EditBookPage = () => {
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  const fetchBookData = useCallback(async () => {
-    if (!id) return;
+  // Fetch book data once when component mounts
+  useEffect(() => {
+    const fetchBookData = async () => {
+      if (!id) return;
 
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`/api/admin/books/${id}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setBook(data.book);
+        } else {
+          setError(data.error || "Failed to fetch book details");
+          console.error("Error fetching book details:", data.error);
+        }
+      } catch (err) {
+        console.error("Error fetching book:", err);
+        setError("An unexpected error occurred while fetching book data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookData();
+  }, [id]); // Only depend on id
+
+  // Function to retry fetching data (not in useCallback to avoid dependency issues)
+  const retryFetchData = () => {
     setLoading(true);
     setError(null);
 
-    try {
-      const response = await fetch(`/api/admin/books/${id}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setBook(data.book);
-      } else {
-        setError(data.error || "Failed to fetch book details");
-        console.error("Error fetching book details:", data.error);
-      }
-    } catch (err) {
-      console.error("Error fetching book:", err);
-      setError("An unexpected error occurred while fetching book data");
-    } finally {
-      setLoading(false);
-      setIsInitialized(true);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    // First load or manual refetch
-    if (!isInitialized || (error && !loading)) {
-      fetchBookData();
-    }
-  }, [fetchBookData, isInitialized, error, loading]);
+    fetch(`/api/admin/books/${id}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          setBook(data.book);
+        } else {
+          setError(data.error || "Failed to fetch book details");
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching book:", err);
+        setError("An unexpected error occurred while fetching book data");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
 
   return (
     <>
@@ -67,11 +86,7 @@ const EditBookPage = () => {
               Error loading book
             </h3>
             <p className="mt-2 text-sm text-red-700">{error}</p>
-            <Button
-              className="mt-4"
-              variant="outline"
-              onClick={() => fetchBookData()}
-            >
+            <Button className="mt-4" variant="outline" onClick={retryFetchData}>
               Try Again
             </Button>
           </div>
