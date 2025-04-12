@@ -360,14 +360,14 @@ const BookRequestForm = () => {
                       value={field.value || ""}
                       onChange={(e) => field.onChange(e.target.value)}
                     />
-                    <p className="text-sm text-light-400 mt-1">
+                    <p className="text-sm text-gray-500 mt-1">
                       Upload your video to YouTube and paste the URL here
                     </p>
                   </div>
 
                   <div className="flex items-center">
                     <div className="flex-1 border-t border-dark-400"></div>
-                    <span className="mx-4 text-sm text-light-400">OR</span>
+                    <span className="mx-4 text-sm text-gray-500">OR</span>
                     <div className="flex-1 border-t border-dark-400"></div>
                   </div>
 

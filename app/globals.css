@@ -168,7 +168,7 @@
 
   /* Book List */
   .book-list {
-    @apply mt-10 flex flex-wrap gap-5 max-xs:justify-between xs:gap-10;
+    @apply mt-10 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5 xs:gap-8;
   }
 
   /* Book Card in List */
