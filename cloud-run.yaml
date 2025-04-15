@@ -1,0 +1,49 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: university-library-webapp
+spec:
+  template:
+    spec:
+      containers:
+        - image: gcr.io/university-library-app/nextjs-app
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT
+            - name: NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY
+            - name: IMAGEKIT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: IMAGEKIT_PRIVATE_KEY
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATABASE_URL
+            - name: AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AUTH_SECRET
+            - name: UPSTASH_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: UPSTASH_REDIS_URL
+            - name: UPSTASH_REDIS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: UPSTASH_REDIS_TOKEN
+            - name: PYTHON_API_URL
+              value: "https://univeristy-library-webapp-production.up.railway.app"

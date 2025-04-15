@@ -2,6 +2,7 @@ import { render } from "@react-email/render";
 import WelcomeEmail from "../emails/WelcomeEmail";
 import NonActiveEmail from "../emails/NonActiveEmail";
 import WelcomeBackEmail from "../emails/WelcomeBackEmail";
+import BookReturnReminderEmail from "../emails/BookReturnReminderEmail";
 import React from "react";
 
 // Welcome Email
@@ -42,6 +43,31 @@ export async function generateWelcomeBackEmail({
   // Use createElement instead of JSX
   const emailComponent = React.createElement(WelcomeBackEmail, {
     fullName,
+  });
+  return render(emailComponent);
+}
+
+// Book Return Reminder Email
+export async function generateBookReturnReminderEmail({
+  fullName,
+  bookTitle,
+  dueDate,
+  daysRemaining,
+  borrowId,
+}: {
+  fullName: string;
+  bookTitle: string;
+  dueDate: string;
+  daysRemaining: number;
+  borrowId: string;
+}): Promise<string> {
+  // Use createElement instead of JSX
+  const emailComponent = React.createElement(BookReturnReminderEmail, {
+    fullName,
+    bookTitle,
+    dueDate,
+    daysRemaining,
+    borrowId,
   });
   return render(emailComponent);
 }
