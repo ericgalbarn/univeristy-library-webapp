@@ -6,7 +6,6 @@ A modern, full-stack university library management platform built with Next.js 1
 ![React](https://img.shields.io/badge/React-19.0.0-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ## 🚀 Features
 
@@ -93,28 +92,6 @@ A modern, full-stack university library management platform built with Next.js 1
 - **Caching**: Upstash Redis for rate limiting and sessions
 - **Monitoring**: Built-in analytics and logging
 
-## 🏗 Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Next.js App   │    │   Python ML API │    │   PostgreSQL    │
-│                 │    │                 │    │                 │
-│  • React 19     │◄──►│  • Flask        │    │  • User Data    │
-│  • TypeScript   │    │  • scikit-learn │◄──►│  • Books        │
-│  • TailwindCSS  │    │  • TF-IDF       │    │  • Borrowing    │
-│  • NextAuth.js  │    │  • Cosine Sim   │    │  • Sessions     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   ImageKit CDN  │    │ Upstash Redis   │    │ Background Jobs │
-│                 │    │                 │    │                 │
-│  • Book Covers  │    │  • Rate Limits  │    │  • QStash       │
-│  • Video Files  │    │  • Sessions     │    │  • Email Queue  │
-│  • Thumbnails   │    │  • Caching      │    │  • Reminders    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
 ## 📦 Installation
 
 ### Prerequisites
@@ -143,38 +120,7 @@ pip install -r requirements.txt
 cd ..
 ```
 
-### 3. Environment Setup
-
-Create `.env.local` file:
-
-```env
-# Database
-DATABASE_URL="postgresql://username:password@host:port/database"
-
-# Authentication
-AUTH_SECRET="your-secret-key"
-NEXT_PUBLIC_API_ENDPOINT="http://localhost:3000"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-
-# ImageKit (File Storage)
-NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT="https://ik.imagekit.io/your-endpoint"
-NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY="your-public-key"
-IMAGEKIT_PRIVATE_KEY="your-private-key"
-
-# Email Service
-RESEND_TOKEN="your-resend-token"
-
-# Redis & Background Jobs (Optional)
-UPSTASH_REDIS_URL="https://your-redis-url.upstash.io"
-UPSTASH_REDIS_TOKEN="your-redis-token"
-QSTASH_URL="https://qstash.upstash.io"
-QSTASH_TOKEN="your-qstash-token"
-
-# ML API
-PYTHON_API_URL="http://localhost:5000"
-```
-
-### 4. Database Setup
+### 3. Database Setup
 
 ```bash
 # Generate database schema
@@ -187,7 +133,7 @@ npm run db:migrate
 npm run seed
 ```
 
-### 5. Start Development
+### 4. Start Development
 
 ```bash
 # Start Next.js app
@@ -263,22 +209,6 @@ The application uses Drizzle ORM with the following main tables:
 4. Confirm login on mobile
 5. Automatic sign-in on desktop
 
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run specific test suites
-npm run test:auth
-npm run test:api
-npm run test:components
-
-# Test ML recommendations
-cd python-api
-python -m pytest tests/
-```
-
 ## 📊 API Documentation
 
 ### Authentication Endpoints
@@ -305,40 +235,11 @@ python -m pytest tests/
 - `PUT /api/user/profile` - Update user profile
 - `GET /api/admin/users` - Get all users (admin)
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow TypeScript best practices
-- Use Prettier for code formatting
-- Write tests for new features
-- Update documentation for API changes
-- Follow conventional commit messages
-
-## 📋 Roadmap
-
-- [ ] **Mobile App**: React Native companion app
-- [ ] **Advanced Analytics**: Detailed usage statistics
-- [ ] **Social Features**: Book reviews and ratings
-- [ ] **Integration APIs**: External library system integration
-- [ ] **Offline Support**: PWA capabilities
-- [ ] **Multi-language**: Internationalization support
-
 ## 🐛 Known Issues
 
 - ML API may timeout on first request (cold start)
 - QR code login requires stable internet connection
 - File uploads limited to 10MB per file
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -348,11 +249,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ImageKit for media management
 - Upstash for Redis and background jobs
 - All contributors and beta testers
-
-## 📞 Support
-
-For support, email contact@yourproject.com or create an issue on GitHub.
-
----
-
-**Built with ❤️ for the university community**
