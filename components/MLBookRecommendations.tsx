@@ -18,6 +18,12 @@ interface RecommendedBook {
   coverUrl: string;
   coverColor: string;
   rating: number;
+  totalCopies: number;
+  availableCopies: number;
+  description: string;
+  videoUrl: string;
+  summary: string;
+  createdAt: Date | null;
   similarityScore: number;
 }
 
@@ -88,11 +94,11 @@ const MLBookRecommendations = ({
         You might also like
       </h2>
 
-      {fallbackUsed && (
+      {/* {fallbackUsed && (
         <p className="mb-4 text-sm text-yellow-600">
           Using simplified recommendations (ML service not available)
         </p>
-      )}
+      )} */}
 
       {loading && (
         <div className="flex h-48 items-center justify-center">
@@ -118,13 +124,12 @@ const MLBookRecommendations = ({
               coverUrl={book.coverUrl}
               coverColor={book.coverColor}
               rating={book.rating}
-              // Add required properties with fallback values
-              totalCopies={1}
-              availableCopies={1}
-              description={""}
-              videoUrl={""}
-              summary={""}
-              createdAt={null}
+              totalCopies={book.totalCopies}
+              availableCopies={book.availableCopies}
+              description={book.description}
+              videoUrl={book.videoUrl}
+              summary={book.summary}
+              createdAt={book.createdAt}
             />
           ))}
         </div>
