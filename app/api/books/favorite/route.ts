@@ -5,12 +5,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
-// Define the allowed HTTP methods
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const runtime = "edge";
-export const methods = ["GET", "POST", "DELETE"];
-
 // Schema for validation
 const requestSchema = z.object({
   bookId: z.string().uuid(),
@@ -22,7 +16,7 @@ export async function POST(req: NextRequest) {
     const session = await auth();
 
     // Check if user is logged in
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "You must be logged in" },
         { status: 401 }
@@ -88,7 +82,7 @@ export async function GET(req: NextRequest) {
     const session = await auth();
 
     // Check if user is logged in
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "You must be logged in" },
         { status: 401 }
@@ -111,10 +105,7 @@ export async function GET(req: NextRequest) {
       .select()
       .from(favoriteBooks)
       .where(
-        and(
-          eq(favoriteBooks.userId, userId as string),
-          eq(favoriteBooks.bookId, bookId as string)
-        )
+        and(eq(favoriteBooks.userId, userId), eq(favoriteBooks.bookId, bookId))
       )
       .limit(1);
 
@@ -138,7 +129,7 @@ export async function DELETE(req: NextRequest) {
     const session = await auth();
 
     // Check if user is logged in
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "You must be logged in" },
         { status: 401 }
@@ -146,17 +137,10 @@ export async function DELETE(req: NextRequest) {
     }
 
     const userId = session.user.id as string;
-    const url = new URL(req.url);
-    let bookId;
 
-    try {
-      // Try to parse body if present
-      const body = await req.json();
-      bookId = body.bookId;
-    } catch (e) {
-      // If no body, check query parameters
-      bookId = url.searchParams.get("bookId");
-    }
+    // Parse the request body
+    const body = await req.json();
+    const { bookId } = body;
 
     if (!bookId) {
       return NextResponse.json(

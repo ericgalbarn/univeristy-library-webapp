@@ -42,7 +42,10 @@ const FavoriteButton = ({
   // Check if book is favorited on component mount
   useEffect(() => {
     if (session?.user) {
+      console.log("🔍 Checking favorite status for book:", bookId);
       checkFavoriteStatus();
+    } else {
+      console.log("❌ No session found for favorite check");
     }
   }, [session, bookId]);
 
@@ -58,14 +61,20 @@ const FavoriteButton = ({
   // Check if book is in user's favorites
   const checkFavoriteStatus = async () => {
     try {
+      console.log("📡 Fetching favorite status from API...");
       const response = await fetch(`/api/books/favorite?bookId=${bookId}`);
       const data = await response.json();
 
+      console.log("📡 Favorite status response:", data);
+
       if (data.success) {
         setIsFavorite(data.favorited);
+        console.log("✅ Favorite status set to:", data.favorited);
+      } else {
+        console.error("❌ Failed to check favorite status:", data.error);
       }
     } catch (error) {
-      console.error("Error checking favorite status:", error);
+      console.error("❌ Error checking favorite status:", error);
     }
   };
 
@@ -73,7 +82,11 @@ const FavoriteButton = ({
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent any parent link navigation
 
+    console.log("🎯 Toggle favorite clicked for book:", bookId);
+    console.log("👤 Session user:", session?.user);
+
     if (!session?.user) {
+      console.log("❌ No session - showing auth toast");
       toast({
         title: "Authentication required",
         description: "Please sign in to add books to favorites",
@@ -95,10 +108,13 @@ const FavoriteButton = ({
     try {
       // Optimistically update UI first for immediate feedback
       const newFavoriteState = !isFavorite;
+      console.log("🔄 Optimistically updating UI to:", newFavoriteState);
       setIsFavorite(newFavoriteState);
 
       const method = newFavoriteState ? "POST" : "DELETE";
       const endpoint = "/api/books/favorite";
+
+      console.log("📡 Making API request:", { method, endpoint, bookId });
 
       const response = await fetch(endpoint, {
         method: method,
@@ -109,10 +125,12 @@ const FavoriteButton = ({
       });
 
       const data = await response.json();
+      console.log("📡 API response:", data);
 
       if (data.success) {
         // Ensure UI state matches server state
         setIsFavorite(data.favorited);
+        console.log("✅ Success! Final favorite state:", data.favorited);
         toast({
           title: data.favorited
             ? "Added to favorites"
@@ -121,6 +139,7 @@ const FavoriteButton = ({
         });
       } else {
         // Revert to original state if there was an error
+        console.log("❌ API error, reverting state");
         setIsFavorite(!newFavoriteState);
         toast({
           title: "Error",
@@ -130,6 +149,7 @@ const FavoriteButton = ({
       }
     } catch (error) {
       // Revert to original state if there was an error
+      console.log("❌ Network/fetch error, reverting state:", error);
       setIsFavorite(!isFavorite);
       console.error("Error toggling favorite status:", error);
       toast({
