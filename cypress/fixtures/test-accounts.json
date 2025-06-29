@@ -1,0 +1,16 @@
+{
+  "testStudent": {
+    "email": "student.test@university.edu",
+    "password": "TestPassword123!",
+    "fullName": "Test Student",
+    "universityId": 12345678,
+    "role": "STUDENT"
+  },
+  "testAdmin": {
+    "email": "admin.test@university.edu",
+    "password": "AdminPassword123!",
+    "fullName": "Test Admin",
+    "universityId": 87654321,
+    "role": "ADMIN"
+  }
+}

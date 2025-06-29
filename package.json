@@ -10,7 +10,14 @@
     "seed": "npx tsx db/seed.ts",
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "npx drizzle-kit migrate",
-    "db:studio": "npx drizzle-kit studio"
+    "db:studio": "npx drizzle-kit studio",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:component": "cypress run --component",
+    "cypress:run:e2e": "cypress run --e2e",
+    "test": "cypress run",
+    "test:component": "cypress run --component",
+    "test:e2e": "cypress run --e2e"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
@@ -63,9 +70,14 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@testing-library/cypress": "^10.0.3",
+    "@testing-library/jest-dom": "^6.6.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cypress": "^14.5.0",
+    "cypress-react-selector": "^3.0.0",
+    "cypress-real-events": "^1.14.0",
     "drizzle-kit": "^0.30.5",
     "eslint": "^9",
     "eslint-config-next": "^15.1.5",

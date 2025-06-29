@@ -27,10 +27,10 @@ A modern, full-stack university library management platform built with Next.js 1
 ### 🔐 Advanced Authentication
 
 - **Multi-Method Login**: Traditional email/password and innovative QR code authentication
-- **QR Code Login**: Mobile-friendly authentication with real-time polling
+- **QR Code Login**: Cross-device authentication - scan QR code on mobile browser to automatically sign in on desktop
 - **Role-Based Access Control**: USER and ADMIN roles with granular permissions
 - **Account Approval System**: Admin approval workflow for new registrations
-- **Session Management**: JWT-based sessions with Redis caching
+- **Session Management**: JWT-based sessions with NextAuth.js
 
 ### 👨‍💼 Administrative Dashboard
 
@@ -49,7 +49,7 @@ A modern, full-stack university library management platform built with Next.js 1
 
 ### 🎨 Modern User Experience
 
-- **Responsive Design**: Mobile-first approach with adaptive layouts
+- **Responsive Web Design**: Mobile-responsive layouts that work seamlessly across devices and browsers
 - **3D Card Effects**: Interactive book cards with depth and hover animations
 - **Dark Mode Support**: Theme switching with system preference detection
 - **Progressive Loading**: Optimized loading states and skeleton screens
@@ -201,13 +201,13 @@ The application uses Drizzle ORM with the following main tables:
 3. **Monitor Activity**: View system analytics and logs
 4. **Handle Requests**: Process book addition requests
 
-### QR Code Login
+### QR Code Authentication
 
-1. Click "QR Code Login" on sign-in page
-2. Enter your email address
-3. Scan QR code with mobile device
-4. Confirm login on mobile
-5. Automatic sign-in on desktop
+1. Click "QR Code Login" on desktop browser sign-in page
+2. Enter your email address to generate QR code
+3. Scan QR code with mobile browser (must be already signed in)
+4. Confirm authentication on mobile browser
+5. Desktop browser automatically signs in via real-time polling
 
 ## 📊 API Documentation
 

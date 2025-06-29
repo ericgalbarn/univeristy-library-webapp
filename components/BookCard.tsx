@@ -91,6 +91,7 @@ const BookCard = ({
   return (
     <motion.div
       ref={ref}
+      data-cy="book-card"
       className={cn(
         "group relative flex min-h-[280px] w-full flex-col gap-2 overflow-visible transition-transform duration-300 ease-out",
         isMinimal && "min-h-fit",
@@ -161,7 +162,10 @@ const BookCard = ({
               </p>
 
               {/* Improved rating display - placed right next to the star icon */}
-              <div className="book-card-rating flex items-center gap-0.5 mt-1">
+              <div
+                className="book-card-rating flex items-center gap-0.5 mt-1"
+                data-cy="book-rating"
+              >
                 <Image
                   src="/icons/star.svg"
                   alt="star"

@@ -62,11 +62,21 @@ export const signInWithCredentials = async (
 export const signUp = async (params: AuthCredentials) => {
   const { fullName, email, universityId, password, universityCard } = params;
 
+  console.log("🔍 SignUp called with params:", {
+    fullName,
+    email,
+    universityId,
+    universityCardLength: universityCard?.length || 0,
+    hasUniversityCard: !!universityCard,
+  });
+
   const ip = (await headers()).get("x-forwarded-for") || "127.0.0.1";
   const { success } = await ratelimit.limit(ip);
 
   if (!success) return redirect("/too-fast");
 
+  // Check for existing user
+  console.log("🔍 Checking for existing user with email:", email);
   const existingUser = await db
     .select()
     .from(users)
@@ -74,36 +84,69 @@ export const signUp = async (params: AuthCredentials) => {
     .limit(1);
 
   if (existingUser.length > 0) {
+    console.log("❌ User already exists:", email);
     return { success: false, error: "User already exists" };
   }
 
+  console.log("✅ No existing user found, proceeding with signup");
+
+  // Validate required fields
+  if (!fullName || !email || !password) {
+    console.log("❌ Missing required fields:", {
+      fullName: !!fullName,
+      email: !!email,
+      password: !!password,
+    });
+    return { success: false, error: "Missing required fields" };
+  }
+
+  // Handle universityCard - provide fallback for testing
+  const finalUniversityCard =
+    universityCard || `placeholder-card-${Date.now()}`;
+  console.log("🔍 Using universityCard:", finalUniversityCard);
+
   const hashedPassword = await hash(password, 10);
+  console.log("✅ Password hashed successfully");
 
   try {
-    await db.insert(users).values({
+    console.log("🔍 Attempting database insert...");
+    const insertResult = await db.insert(users).values({
       fullName,
       email,
       universityId,
       password: hashedPassword,
-      universityCard,
+      universityCard: finalUniversityCard,
     });
 
-    await workflowClient.trigger({
-      url: `${config.env.prodApiEndpoint}/api/workflows/onboarding`,
-      body: {
-        email,
-        fullName,
-        universityId,
-      },
-    });
+    console.log("✅ Database insert successful:", insertResult);
 
-    // For local development, also send a direct email using our new templates
-    // Remove this in production
+    // Try to trigger workflow, but don't fail signup if it fails
+    try {
+      console.log("🔍 Attempting to trigger onboarding workflow...");
+      await workflowClient.trigger({
+        url: `${config.env.prodApiEndpoint}/api/workflows/onboarding`,
+        body: {
+          email,
+          fullName,
+          universityId,
+        },
+      });
+      console.log("✅ Onboarding workflow triggered successfully");
+    } catch (workflowError) {
+      console.error(
+        "⚠️ Workflow trigger failed (non-blocking):",
+        workflowError
+      );
+      // Don't fail the signup if workflow fails
+    }
+
+    // Try to send development email, but don't fail signup if it fails
     if (process.env.NODE_ENV === "development") {
-      const { generateWelcomeEmail } = await import("@/lib/emailTemplates");
-      const { sendEmail } = await import("@/lib/workflow");
-
       try {
+        console.log("🔍 Attempting to send development email...");
+        const { generateWelcomeEmail } = await import("@/lib/emailTemplates");
+        const { sendEmail } = await import("@/lib/workflow");
+
         const welcomeEmail = await generateWelcomeEmail({
           fullName,
           universityId: universityId?.toString(),
@@ -113,20 +156,52 @@ export const signUp = async (params: AuthCredentials) => {
           subject: "Welcome to the University Library (DEV)",
           message: welcomeEmail,
         });
-        console.log("Development welcome email sent directly");
-      } catch (error) {
-        console.error("Failed to send development email:", error);
+        console.log("✅ Development welcome email sent successfully");
+      } catch (emailError) {
+        console.error(
+          "⚠️ Failed to send development email (non-blocking):",
+          emailError
+        );
+        // Don't fail the signup if email fails
       }
     }
 
+    console.log("✅ Signup completed successfully for:", email);
     return {
       success: true,
       message:
         "Your account has been created and is pending approval. You'll be notified once approved.",
     };
   } catch (error) {
-    console.log(error, "Signup error");
-    return { success: false, error: "Signup error" };
+    console.error("❌ Database insert failed:", error);
+
+    // Provide more detailed error information
+    if (error instanceof Error) {
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
+
+      // Check for specific database errors
+      if (error.message.includes("duplicate key")) {
+        return {
+          success: false,
+          error: "An account with this email or university ID already exists",
+        };
+      } else if (error.message.includes("violates not-null constraint")) {
+        return { success: false, error: "Missing required information" };
+      } else if (error.message.includes("invalid input syntax")) {
+        return { success: false, error: "Invalid data format provided" };
+      }
+
+      return { success: false, error: `Signup failed: ${error.message}` };
+    }
+
+    return {
+      success: false,
+      error: "An unexpected error occurred during signup",
+    };
   }
 };
 

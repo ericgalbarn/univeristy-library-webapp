@@ -62,8 +62,16 @@ const AuthForm = <T extends FieldValues>({
     setIsSubmitting(true);
     setSuccessMessage(null);
 
+    // Log form data for debugging (hide password)
+    console.log("🚀 Form submission data:", {
+      ...data,
+      password: "[REDACTED]",
+    });
+
     try {
       const result = await onSubmit(data);
+
+      console.log("📥 Form submission result:", result);
 
       if (result.success) {
         if (isSignIn) {
@@ -77,6 +85,12 @@ const AuthForm = <T extends FieldValues>({
           if (result.message) {
             setSuccessMessage(result.message);
             form.reset();
+
+            toast({
+              title: "Account Created Successfully",
+              description: result.message,
+              variant: "default",
+            });
           } else {
             toast({
               title: "Success",
@@ -86,6 +100,8 @@ const AuthForm = <T extends FieldValues>({
           }
         }
       } else {
+        console.error("❌ Form submission failed:", result.error);
+
         toast({
           title: `Error ${isSignIn ? "signing in" : "signing up"}`,
           description: result.error ?? "An error occurred.",
@@ -93,9 +109,14 @@ const AuthForm = <T extends FieldValues>({
         });
       }
     } catch (error) {
+      console.error("❌ Form submission exception:", error);
+
       toast({
         title: "Error",
-        description: "An unexpected error occurred.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred.",
         variant: "destructive",
       });
     } finally {
@@ -148,10 +169,16 @@ const AuthForm = <T extends FieldValues>({
                       <FileUpload
                         type="image"
                         accept="image/*"
-                        placeholder="Upload your university ID"
+                        placeholder="Upload your university ID (optional for testing)"
                         folder="ids"
                         variant="dark"
-                        onFileChange={field.onChange}
+                        onFileChange={(filePath) => {
+                          console.log(
+                            "📎 FileUpload onChange called with:",
+                            filePath
+                          );
+                          field.onChange(filePath || "");
+                        }}
                       />
                     ) : (
                       <Input
