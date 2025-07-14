@@ -223,7 +223,7 @@ const BookCard = ({
 
         {/* Action buttons */}
         {!isLoanedBook && !isMinimal && showActions && (
-          <div className="invisible absolute right-0 top-0 flex translate-x-0 translate-y-0 items-start gap-2 opacity-0 transition-all group-hover:visible group-hover:translate-x-2 group-hover:-translate-y-2 group-hover:opacity-100">
+          <div className="absolute right-0 top-0 flex translate-x-0 translate-y-0 items-start gap-2 opacity-80 transition-all hover:opacity-100 group-hover:translate-x-2 group-hover:-translate-y-2">
             <FavoriteButton bookId={id} />
             <AddToBorrowCartButton
               book={{
